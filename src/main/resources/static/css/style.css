@@ -1,0 +1,23 @@
+/* Hiệu ứng bóng đổ khi rê chuột vào Card khóa học */
+.hover-shadow {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-5px); /* Nhấc nhẹ thẻ lên */
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; /* Tăng bóng đổ */
+    cursor: pointer;
+}
+
+/* Đảm bảo ảnh trong card luôn có kích thước đẹp */
+.card-img-top {
+    object-fit: cover;
+    height: 200px;
+    width: 100%;
+}
+
+/* Màu nền nhẹ cho jumbotron */
+.jumbotron {
+    background-color: #f8f9fa;
+    border-radius: 0.3rem;
+}

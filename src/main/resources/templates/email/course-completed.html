@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Hoàn thành khóa học</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f5f9ff;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1);
+            border-top: 6px solid #007BFF;
+        }
+        .header {
+            text-align: center;
+            color: #007BFF;
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .content {
+            color: #333;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .highlight {
+            color: #007BFF;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #777;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            margin-top: 24px;
+            background-color: #007BFF;
+            color: #fff !important;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">🎉 Chúc mừng bạn đã hoàn thành khóa học!</div>
+    <div class="content">
+        <p>Xin chào <span class="highlight" th:text="${userName}">Người học</span>,</p>
+
+        <p>Chúng tôi rất vui mừng thông báo rằng bạn đã <strong>hoàn thành khóa học</strong> <span class="highlight" th:text="${courseTitle}">Tên khóa học</span>.</p>
+
+        <ul>
+            <li><strong>Thời lượng:</strong> <span th:text="${duration} + ' giờ'"></span></li>
+            <li><strong>Giảng viên:</strong> <span th:text="${instructor}"></span></li>
+            <li><strong>Ngày hoàn thành:</strong> <span th:text="${completedDate}"></span></li>
+        </ul>
+
+        <p>Bạn đã đạt được cột mốc quan trọng trong hành trình học tập. Hãy tiếp tục nâng cao kiến thức và kỹ năng của bạn!</p>
+
+        <div style="text-align: center;">
+            <a href="http://localhost:5173/courses" class="btn">Khám phá thêm khóa học</a>
+        </div>
+    </div>
+
+    <div class="footer">
+        © 2025 CODELEARN. Mọi quyền được bảo lưu.
+    </div>
+</div>
+</body>
+</html>

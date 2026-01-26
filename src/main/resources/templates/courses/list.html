@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Danh sách khóa học - Course Shop</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2>Danh sách khóa học</h2>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form th:action="@{/courses}" method="get" class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="keyword"
+                               th:value="${keyword}" placeholder="Tìm kiếm khóa học...">
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" name="topicId">
+                            <option value="">Tất cả chủ đề</option>
+                            <option th:each="topic : ${topics}"
+                                    th:value="${topic.id}"
+                                    th:text="${topic.name}"
+                                    th:selected="${topic.id == topicId}">Topic</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search"></i> Tìm kiếm
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Courses Grid -->
+        <div class="row" th:if="${courses != null and courses.content != null and !courses.content.isEmpty()}">
+            <div class="col-md-4 mb-4" th:each="course : ${courses.content}">
+                <div class="card h-100 shadow-sm hover-shadow">
+                    <div class="position-relative">
+                        <img th:src="${course.coverImage != null ? course.coverImage : 'https://via.placeholder.com/600x400?text=Course+Image'}"
+                             class="card-img-top"
+                             th:alt="${course.title}"
+                             style="height: 200px; object-fit: cover;">
+                        <span class="badge bg-danger position-absolute top-0 end-0 m-2"
+                              th:if="${course.price == 0}">Miễn phí</span>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title text-primary" th:text="${course.title}">Course Title</h5>
+                        <p class="card-text text-muted flex-grow-1"
+                           th:text="${#strings.abbreviate(course.description, 100)}">Description</p>
+
+                        <hr class="my-3">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-info text-dark">
+                                <i class="fas fa-tags me-1"></i>
+                                <span th:text="${course.topicName}">Topic</span>
+                            </span>
+                            <small class="text-muted">
+                                <i class="fas fa-users me-1"></i>
+                                <span th:text="${course.enrolledCount}">0</span> học viên
+                            </small>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <span class="h5 text-primary mb-0 fw-bold"
+                                  th:text="${course.price > 0 ? #numbers.formatDecimal(course.price, 0, 'COMMA', 0, 'POINT') + ' đ' : 'Miễn phí'}">
+                                500,000 đ
+                            </span>
+                            <a th:href="@{/courses/{id}(id=${course.id})}" class="btn btn-sm btn-outline-primary">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${courses == null or courses.content == null or courses.content.isEmpty()}"
+             class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Không tìm thấy khóa học nào.
+        </div>
+
+        <!-- Pagination -->
+        <nav th:if="${courses != null and courses.totalPages > 1}" aria-label="Course pagination">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${courses.first} ? 'disabled'">
+                    <a class="page-link"
+                       th:href="@{/courses(page=${courses.number - 1},keyword=${keyword},topicId=${topicId})}"
+                       aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span> Trước
+                    </a>
+                </li>
+
+                <li class="page-item"
+                    th:each="i : ${#numbers.sequence(0, courses.totalPages - 1)}"
+                    th:classappend="${i == courses.number} ? 'active'">
+                    <a class="page-link"
+                       th:href="@{/courses(page=${i},keyword=${keyword},topicId=${topicId})}"
+                       th:text="${i + 1}">1</a>
+                </li>
+
+                <li class="page-item" th:classappend="${courses.last} ? 'disabled'">
+                    <a class="page-link"
+                       th:href="@{/courses(page=${courses.number + 1},keyword=${keyword},topicId=${topicId})}"
+                       aria-label="Next">
+                        Sau <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</body>
+</html>

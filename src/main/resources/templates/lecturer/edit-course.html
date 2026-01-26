@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Chỉnh sửa khóa học - Course Shop</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="card">
+            <div class="card-body">
+                <h3>Chỉnh sửa khóa học</h3>
+                <p>Tính năng chỉnh sửa khóa học qua giao diện web đang được phát triển.</p>
+                <p>Hiện tại, vui lòng sử dụng API endpoint: <code>PATCH /api/courses/{id}</code></p>
+                <a th:href="@{/lecturer/courses}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Thanh toán thất bại - Course Shop</title>
+    <style>
+        .failed-animation {
+            animation: shakeX 0.5s ease-in-out;
+        }
+
+        @keyframes shakeX {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8 text-center">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-5">
+                        <!-- Failed Icon -->
+                        <div class="failed-animation mb-4">
+                            <i class="fas fa-times-circle text-danger" style="font-size: 5rem;"></i>
+                        </div>
+
+                        <!-- Failed Message -->
+                        <h2 class="text-danger mb-3">Thanh toán thất bại</h2>
+                        <p class="text-muted mb-4" th:text="${message}">
+                            Đơn hàng của bạn chưa được thanh toán. Vui lòng thử lại hoặc liên hệ hỗ trợ.
+                        </p>
+
+                        <!-- Divider -->
+                        <hr class="my-4">
+
+                        <!-- Reasons -->
+                        <div class="alert alert-warning text-start" role="alert">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Có thể do các nguyên nhân sau:
+                            </h6>
+                            <ul class="mb-0 ps-4">
+                                <li>Giao dịch bị hủy bởi người dùng</li>
+                                <li>Số dư tài khoản không đủ</li>
+                                <li>Thông tin thanh toán không chính xác</li>
+                                <li>Lỗi kết nối với ngân hàng</li>
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 mt-4">
+                            <a th:href="@{/cart}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-redo me-2"></i>
+                                Thử lại thanh toán
+                            </a>
+                            <a th:href="@{/courses}" class="btn btn-outline-primary">
+                                <i class="fas fa-search me-2"></i>
+                                Tiếp tục mua sắm
+                            </a>
+                            <a th:href="@{/}" class="btn btn-outline-secondary">
+                                <i class="fas fa-home me-2"></i>
+                                Về trang chủ
+                            </a>
+                        </div>
+
+                        <!-- Support Info -->
+                        <div class="mt-4 pt-3 border-top">
+                            <p class="text-muted small mb-0">
+                                <i class="fas fa-headset me-2"></i>
+                                Cần hỗ trợ? Liên hệ:
+                                <a href="mailto:support@courseshop.com">support@courseshop.com</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+

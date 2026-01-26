@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Quản lý khóa học - Course Shop</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Quản lý khóa học của tôi</h2>
+            <a th:href="@{/lecturer/courses/create}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Tạo khóa học mới
+            </a>
+        </div>
+
+        <div th:if="${courses != null and !courses.isEmpty()}" class="row">
+            <div class="col-md-6 mb-4" th:each="course : ${courses}">
+                <div class="card shadow-sm">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img th:src="${course.coverImage}" class="img-fluid rounded-start" alt="Course"
+                                 style="height: 200px; object-fit: cover; width: 100%;">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title" th:text="${course.title}">Course Title</h5>
+                                <p class="card-text text-truncate" th:text="${course.description}">Description</p>
+
+                                <div class="mb-2">
+                                    <span class="badge bg-info me-2" th:text="${course.topicName}">Topic</span>
+                                    <span class="badge" th:classappend="${course.active} ? 'bg-success' : 'bg-secondary'"
+                                          th:text="${course.active} ? 'Hoạt động' : 'Tạm dừng'">Active</span>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-primary fw-bold"
+                                          th:text="${#numbers.formatDecimal(course.price, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">
+                                        500,000 VNĐ
+                                    </span>
+                                    <small class="text-muted">
+                                        <i class="fas fa-users"></i> <span th:text="${course.enrolledCount}">0</span> học viên
+                                    </small>
+                                </div>
+
+                                <div class="btn-group w-100" role="group">
+                                    <a th:href="@{/lecturer/courses/{id}/edit(id=${course.id})}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i> Sửa
+                                    </a>
+                                    <a th:href="@{/courses/{id}(id=${course.id})}"
+                                       class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-eye"></i> Xem
+                                    </a>
+                                    <form th:action="@{/lecturer/courses/{id}/delete(id=${course.id})}"
+                                          method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('Bạn có chắc muốn xóa khóa học này?')">
+                                            <i class="fas fa-trash"></i> Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${courses == null or courses.isEmpty()}" class="text-center py-5">
+            <i class="fas fa-chalkboard-teacher fa-5x text-muted mb-3"></i>
+            <h3>Chưa có khóa học nào</h3>
+            <p class="text-muted">Hãy tạo khóa học đầu tiên của bạn!</p>
+            <a th:href="@{/lecturer/courses/create}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Tạo khóa học mới
+            </a>
+        </div>
+    </div>
+</body>
+</html>
+

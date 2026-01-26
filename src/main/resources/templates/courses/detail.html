@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title th:text="${course.title} + ' - Chi tiết khóa học'">Chi tiết khóa học - Course Shop</title>
+    <style>
+        .module-card {
+            border-left: 4px solid #0d6efd;
+        }
+
+        .video-item {
+            padding: 8px 12px;
+            border-left: 2px solid #e9ecef;
+            margin-left: 10px;
+            transition: all 0.2s;
+        }
+
+        .video-item:hover {
+            border-left-color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+
+        .sticky-sidebar {
+            position: sticky;
+            top: 20px;
+        }
+
+        .price-tag {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- Error Message -->
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Course Description & Modules -->
+        <div class="col-lg-8">
+            <!-- Course Header -->
+            <div class="mb-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a th:href="@{/}">Trang chủ</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{/courses}">Khóa học</a></li>
+                        <li class="breadcrumb-item active" aria-current="page" th:text="${course.title}">Chi tiết</li>
+                    </ol>
+                </nav>
+                <h1 class="display-5 fw-bold mb-3" th:text="${course.title}">Tên khóa học</h1>
+                <div class="d-flex align-items-center text-muted mb-3">
+                    <i class="fas fa-user me-2"></i>
+                    <span th:text="'Giảng viên: ' + ${course.createdBy}">Giảng viên</span>
+                    <span class="mx-3">|</span>
+                    <i class="fas fa-tag me-2"></i>
+                    <span th:text="${course.topicName}">Chủ đề</span>
+                    <span class="mx-3">|</span>
+                    <i class="fas fa-users me-2"></i>
+                    <span th:text="${course.totalEnrolled} + ' học viên'">Học viên</span>
+                </div>
+            </div>
+
+            <!-- Course Description -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h3 class="card-title border-bottom pb-3 mb-3">
+                        <i class="fas fa-info-circle text-primary me-2"></i>Mô tả khóa học
+                    </h3>
+                    <div class="course-content" th:utext="${course.content}">
+                        <p>Nội dung mô tả khóa học sẽ được hiển thị ở đây...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Modules -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title border-bottom pb-3 mb-4">
+                        <i class="fas fa-list text-primary me-2"></i>Nội dung khóa học
+                        <span class="badge bg-secondary ms-2" th:text="${course.videoCount} + ' video'">0 video</span>
+                    </h3>
+
+                    <div th:if="${course.modules != null and !course.modules.isEmpty()}">
+                        <div class="accordion" id="moduleAccordion">
+                            <div class="accordion-item module-card mb-3" th:each="module, iterStat : ${course.modules}">
+                                <h2 class="accordion-header" th:id="'heading' + ${iterStat.index}">
+                                    <button class="accordion-button"
+                                            th:classappend="${iterStat.index != 0} ? 'collapsed' : ''"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            th:data-bs-target="'#collapse' + ${iterStat.index}"
+                                            th:aria-expanded="${iterStat.index == 0}"
+                                            th:aria-controls="'collapse' + ${iterStat.index}">
+                                        <div class="d-flex justify-content-between w-100 me-3">
+                                            <span>
+                                                <i class="fas fa-folder-open me-2"></i>
+                                                <strong th:text="${module.title}">Module Title</strong>
+                                            </span>
+                                            <span class="badge bg-info text-dark"
+                                                  th:text="${module.videos != null ? module.videos.size() : 0} + ' video'">
+                                                0 video
+                                            </span>
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div th:id="'collapse' + ${iterStat.index}"
+                                     class="accordion-collapse collapse"
+                                     th:classappend="${iterStat.index == 0} ? 'show' : ''"
+                                     th:aria-labelledby="'heading' + ${iterStat.index}"
+                                     data-bs-parent="#moduleAccordion">
+                                    <div class="accordion-body">
+                                        <div th:if="${module.videos != null and !module.videos.isEmpty()}">
+                                            <div class="video-item mb-2" th:each="video, vIterStat : ${module.videos}">
+                                                <i class="fas fa-play-circle text-primary me-2"></i>
+                                                <span th:text="${vIterStat.index + 1} + '. ' + ${video}">Video Title</span>
+                                            </div>
+                                        </div>
+                                        <div th:if="${module.videos == null or module.videos.isEmpty()}"
+                                             class="text-muted fst-italic">
+                                            <i class="fas fa-info-circle me-2"></i>Chưa có video nào trong module này
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div th:if="${course.modules == null or course.modules.isEmpty()}"
+                         class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>Khóa học này chưa có nội dung.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Course Info & Actions -->
+        <div class="col-lg-4">
+            <div class="sticky-sidebar">
+                <div class="card shadow-lg">
+                    <!-- Course Image -->
+                    <img th:src="${course.coverImage != null ? course.coverImage : 'https://via.placeholder.com/400x225?text=Course+Image'}"
+                         class="card-img-top"
+                         th:alt="${course.title}"
+                         style="height: 225px; object-fit: cover;">
+
+                    <div class="card-body">
+                        <!-- Price -->
+                        <div class="text-center mb-4">
+                            <div class="price-tag text-primary"
+                                 th:text="${course.price != null and course.price > 0 ? #numbers.formatDecimal(course.price, 0, 'COMMA', 0, 'POINT') + ' đ' : 'Miễn phí'}">
+                                500,000 đ
+                            </div>
+                            <small class="text-muted" th:if="${course.price != null and course.price > 0}">
+                                Một lần thanh toán
+                            </small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 mb-4">
+                            <!-- If enrolled -->
+                            <a th:if="${course.status.name() == 'COMPLETED'}"
+                               th:href="@{/courses/learn/{id}(id=${course.id})}"
+                               class="btn btn-success btn-lg">
+                                <i class="fas fa-check-circle me-2"></i>Đã hoàn thành
+                            </a>
+
+                            <a th:if="${course.status.name() == 'IN_PROGRESS'}"
+                               th:href="@{/courses/learn/{id}(id=${course.id})}"
+                               class="btn btn-primary btn-lg">
+                                <i class="fas fa-play me-2"></i>Tiếp tục học
+                            </a>
+
+                            <!-- If not enrolled -->
+                            <div th:if="${course.status.name() == 'NOT_ENROLLED'}" sec:authorize="isAuthenticated()">
+                                <form th:action="@{/cart/add/{id}(id=${course.id})}" method="post" class="mb-2">
+                                    <button type="submit" class="btn btn-warning btn-lg w-100">
+                                        <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ hàng
+                                    </button>
+                                </form>
+                                <form th:action="@{/cart/add/{id}(id=${course.id})}" method="post">
+                                    <input type="hidden" name="buyNow" value="true">
+                                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                                        <i class="fas fa-bolt me-2"></i>Mua ngay
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- If guest -->
+                            <div th:if="${course.status.name() == 'NOT_ENROLLED'}" sec:authorize="!isAuthenticated()">
+                                <a th:href="@{/auth/login}" class="btn btn-primary btn-lg w-100 mb-2">
+                                    <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ hàng
+                                </a>
+                                <a th:href="@{/auth/register}" class="btn btn-outline-primary btn-lg w-100">
+                                    <i class="fas fa-bolt me-2"></i>Mua ngay
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Course Info -->
+                        <div class="border-top pt-3">
+                            <h5 class="mb-3">Thông tin khóa học</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-clock text-primary me-2"></i>
+                                    <strong>Thời lượng:</strong>
+                                    <span th:text="${course.duration} + ' phút'">0 phút</span>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-video text-primary me-2"></i>
+                                    <strong>Video:</strong>
+                                    <span th:text="${course.videoCount} + ' bài học'">0 bài học</span>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-users text-primary me-2"></i>
+                                    <strong>Học viên:</strong>
+                                    <span th:text="${course.totalEnrolled}">0</span>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-certificate text-primary me-2"></i>
+                                    <strong>Chứng chỉ:</strong> Có
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-mobile-alt text-primary me-2"></i>
+                                    <strong>Truy cập:</strong> Mọi thiết bị
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

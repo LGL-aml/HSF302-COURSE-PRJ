@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Thanh toán thành công - Course Shop</title>
+    <style>
+        .success-animation {
+            animation: scaleIn 0.5s ease-in-out;
+        }
+
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8 text-center">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-5">
+                        <!-- Success Icon -->
+                        <div class="success-animation mb-4">
+                            <i class="fas fa-check-circle text-success" style="font-size: 5rem;"></i>
+                        </div>
+
+                        <!-- Success Message -->
+                        <h2 class="text-success mb-3">Thanh toán thành công!</h2>
+                        <p class="text-muted mb-4" th:text="${message}">
+                            Đơn hàng của bạn đã được thanh toán thành công. Bạn có thể bắt đầu học ngay bây giờ!
+                        </p>
+
+                        <!-- Divider -->
+                        <hr class="my-4">
+
+                        <!-- Info -->
+                        <div class="alert alert-info d-flex align-items-center" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <div>
+                                Khóa học đã được kích hoạt và thêm vào danh sách khóa học của bạn.
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 mt-4">
+                            <a th:href="@{/courses/me}" class="btn btn-success btn-lg">
+                                <i class="fas fa-graduation-cap me-2"></i>
+                                Vào học ngay
+                            </a>
+                            <a th:href="@{/courses}" class="btn btn-outline-primary">
+                                <i class="fas fa-search me-2"></i>
+                                Khám phá thêm khóa học
+                            </a>
+                            <a th:href="@{/}" class="btn btn-outline-secondary">
+                                <i class="fas fa-home me-2"></i>
+                                Về trang chủ
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+
