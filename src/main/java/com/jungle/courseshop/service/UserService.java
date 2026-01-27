@@ -89,12 +89,8 @@ public class UserService implements CommandLineRunner {
 
         String imgUser = "https://freesvg.org/img/abstract-user-flat-3.png";
 
-        // Check if user is authenticated and is admin
-        boolean isAdmin = authentication != null &&
-                          authentication.isAuthenticated() &&
-                          !"anonymousUser".equals(authentication.getPrincipal()) &&
-                          authentication.getAuthorities().stream()
-                              .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ADMIN"));
 
         Role assignedRole = Role.MEMBER;
         if (isAdmin && request.getRole() != null) {

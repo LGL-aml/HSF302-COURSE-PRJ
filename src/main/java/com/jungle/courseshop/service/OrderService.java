@@ -1,6 +1,5 @@
 package com.jungle.courseshop.service;
 
-import com.jungle.courseshop.dto.NotificationMessage;
 import com.jungle.courseshop.entity.*;
 import com.jungle.courseshop.repository.CartRepo;
 import com.jungle.courseshop.repository.OrderItemRepo;
@@ -21,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
