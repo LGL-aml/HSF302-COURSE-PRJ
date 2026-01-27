@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title th:text="${title}">Admin Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+    <div layout:fragment="content">
+        <!-- Page Header -->
+        <div class="page-header slide-in">
+            <h2 class="page-title">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </h2>
+            <div class="text-muted" th:text="${#temporals.format(#temporals.createNow(), 'EEEE, dd MMMM yyyy')}">Date</div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="admin-card bg-gradient-primary text-white h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center position-relative z-1">
+                            <div>
+                                <h6 class="text-uppercase mb-2 opacity-75">Người dùng</h6>
+                                <h2 class="display-5 fw-bold mb-0" th:text="${totalUsers}">0</h2>
+                            </div>
+                            <div class="p-3 bg-white bg-opacity-25 rounded-circle">
+                                <i class="fas fa-users fa-2x"></i>
+                            </div>
+                        </div>
+                        <i class="fas fa-users card-icon-bg"></i>
+                    </div>
+                    <div class="card-footer border-0 bg-transparent py-3">
+                        <a th:href="@{/admin/users}" class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                            <span class="small">Xem chi tiết</span>
+                            <i class="fas fa-arrow-right small"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="admin-card bg-gradient-success text-white h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center position-relative z-1">
+                            <div>
+                                <h6 class="text-uppercase mb-2 opacity-75">Khóa học</h6>
+                                <h2 class="display-5 fw-bold mb-0" th:text="${totalCourses}">0</h2>
+                            </div>
+                            <div class="p-3 bg-white bg-opacity-25 rounded-circle">
+                                <i class="fas fa-book fa-2x"></i>
+                            </div>
+                        </div>
+                        <i class="fas fa-book card-icon-bg"></i>
+                    </div>
+                    <div class="card-footer border-0 bg-transparent py-3">
+                        <a th:href="@{/courses}" class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                            <span class="small">Xem tất cả</span>
+                            <i class="fas fa-arrow-right small"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="admin-card bg-gradient-info text-white h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center position-relative z-1">
+                            <div>
+                                <h6 class="text-uppercase mb-2 opacity-75">Chủ đề</h6>
+                                <h2 class="display-5 fw-bold mb-0" th:text="${totalTopics}">0</h2>
+                            </div>
+                            <div class="p-3 bg-white bg-opacity-25 rounded-circle">
+                                <i class="fas fa-tags fa-2x"></i>
+                            </div>
+                        </div>
+                        <i class="fas fa-tags card-icon-bg"></i>
+                    </div>
+                    <div class="card-footer border-0 bg-transparent py-3">
+                        <a th:href="@{/admin/topics}" class="text-white text-decoration-none d-flex align-items-center justify-content-between">
+                            <span class="small">Quản lý ngay</span>
+                            <i class="fas fa-arrow-right small"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Users Table -->
+        <div class="admin-card p-4">
+            <h5 class="fw-bold mb-4 text-secondary"><i class="fas fa-user-clock me-2"></i>Người dùng mới tham gia</h5>
+            <div class="table-responsive">
+                <table class="table admin-table text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>Avatar</th>
+                            <th>Tên người dùng</th>
+                            <th>Email</th>
+                            <th>Vai trò</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="user : ${recentUsers}">
+                            <td>
+                                <img th:src="${user.avatar} ?: '/images/default-avatar.png'" 
+                                     class="rounded-circle shadow-sm" width="45" height="45" alt="Avatar">
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark" th:text="${user.username}">user</div>
+                                <small class="text-muted">ID: <span th:text="${user.id}">#1</span></small>
+                            </td>
+                            <td class="text-muted" th:text="${user.email}">email@example.com</td>
+                            <td>
+                                <span class="badge rounded-pill px-3 py-2" 
+                                      th:classappend="${user.role == 'ADMIN' ? 'bg-danger bg-opacity-10 text-danger' : (user.role == 'LECTURER' ? 'bg-warning bg-opacity-10 text-warning' : 'bg-info bg-opacity-10 text-info')}"
+                                      th:text="${user.role}">MEMBER</span>
+                            </td>
+                            <td>
+                                <a th:href="@{/admin/users/{id}(id=${user.id})}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    Chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

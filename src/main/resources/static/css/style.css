@@ -3,10 +3,55 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    background-color: #f0f2f5;
+    background-image: radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
 }
 
 main {
     flex: 1;
+}
+
+/* 3D Utilities */
+.perspective-container {
+    perspective: 1000px;
+}
+
+.tilt-card {
+    transform-style: preserve-3d;
+    transform: perspective(1000px);
+}
+
+.floating-3d {
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(2deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+}
+
+/* Glassmorphism */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    border-radius: 16px;
+}
+
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
 /* Hover Effects */
@@ -15,8 +60,7 @@ main {
 }
 
 .hover-shadow:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-    transform: translateY(-5px);
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
 }
 
 .transition-all {
@@ -30,10 +74,18 @@ main {
     width: 100%;
 }
 
-/* Jumbotron */
+/* Updated Jumbotron for Hero */
 .jumbotron {
-    background-color: #f8f9fa;
-    border-radius: 0.3rem;
+    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+    border-radius: 20px;
+    color: white;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.jumbotron h1 {
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 /* Course Detail Page Styles */

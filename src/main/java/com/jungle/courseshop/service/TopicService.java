@@ -42,12 +42,13 @@ public class TopicService {
     public TopicResponse create(TopicRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
+        log.info("Creating topic '{}' by user '{}'", request.getName(), username);
 
         User creator = userRepository.findByUsernameAndEnabledTrue(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found or disabled: " + username));
 
         if (topicRepository.existsByNameIgnoreCase(request.getName())) {
-            throw new IllegalArgumentException("Topic with the same name already exists");
+            throw new IllegalArgumentException("Topic '" + request.getName() + "' already exists");
         }
 
         Topic topic = new Topic();
@@ -56,7 +57,7 @@ public class TopicService {
         topic.setCreator(creator);
         topic.setActive(true);
         Topic savedTopic = topicRepository.save(topic);
-        return mapToResponse(savedTopic, creator.getFullname());
+        return mapToResponse(savedTopic, creator.getFullname() != null ? creator.getFullname() : creator.getUsername());
     }
 
 
