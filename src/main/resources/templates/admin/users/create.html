@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title th:text="${title}">Thêm người dùng mới</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a th:href="@{/admin/users}">Người dùng</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Thêm mới</li>
+                    </ol>
+                </nav>
+
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Thêm người dùng mới</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form th:action="@{/admin/users}" method="post" th:object="${registerRequest}">
+                            
+                            <!-- Hiển thị lỗi chung -->
+                            <div th:if="${error}" class="alert alert-danger" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label required">Tên đăng nhập <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" th:field="*{username}" 
+                                           th:classappend="${#fields.hasErrors('username')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label required">Email <span class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" th:field="*{email}"
+                                           th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label required">Mật khẩu <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" th:field="*{password}"
+                                           th:classappend="${#fields.hasErrors('password')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label required">Xác nhận mật khẩu <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" th:field="*{confirmPassword}"
+                                           th:classappend="${#fields.hasErrors('confirmPassword')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label required">Họ và tên <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" th:field="*{fullname}"
+                                           th:classappend="${#fields.hasErrors('fullname')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('fullname')}" th:errors="*{fullname}"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Số điện thoại</label>
+                                    <input type="text" class="form-control" th:field="*{phone}"
+                                           th:classappend="${#fields.hasErrors('phone')} ? 'is-invalid'">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <label class="form-label">Địa chỉ</label>
+                                    <input type="text" class="form-control" th:field="*{address}">
+                                </div>
+                                
+                                <div class="col-12 mt-4">
+                                    <label class="form-label fw-bold">Vai trò <span class="text-danger">*</span></label>
+                                    <div class="d-flex gap-3 p-3 border rounded bg-light">
+                                        <div class="form-check" th:each="roleOpt : ${roles}">
+                                            <input class="form-check-input" type="radio" th:field="*{role}" 
+                                                   th:value="${roleOpt}" required>
+                                            <label class="form-check-label" th:for="${#ids.prev('role')}" th:text="${roleOpt.name()}"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <a th:href="@{/admin/users}" class="btn btn-secondary">Hủy bỏ</a>
+                                <button type="submit" class="btn btn-success"> <i class="fas fa-plus me-1"></i> Tạo người dùng</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

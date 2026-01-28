@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title th:text="${title}">Chi tiết người dùng</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a th:href="@{/admin/users}">Người dùng</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa</li>
+                    </ol>
+                </nav>
+
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>Thông tin người dùng</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form th:action="@{/admin/users/{id}/update(id=${user.id})}" method="post">
+                            <div class="text-center mb-4">
+                                <img th:src="${user.avatar}" class="rounded-circle border border-3 border-primary" width="100" height="100" alt="Avatar">
+                                <h4 class="mt-2" th:text="${user.fullName}">Tên người dùng</h4>
+                                <p class="text-muted" th:text="${user.username}">username</p>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Họ và tên</label>
+                                    <input type="text" class="form-control" name="fullname" th:value="${user.fullName}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="email" th:value="${user.email}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Số điện thoại</label>
+                                    <input type="text" class="form-control" name="phone" th:value="${user.phone}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Địa chỉ</label>
+                                    <input type="text" class="form-control" name="address" th:value="${user.address}">
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Phân quyền</label>
+                                    <div class="d-flex gap-3 p-3 border rounded bg-light">
+                                        <div class="form-check" th:each="role : ${roles}">
+                                            <input class="form-check-input" type="radio" name="role" 
+                                                   th:id="${'role-' + role}" th:value="${role}" 
+                                                   th:checked="${role.name() == user.role}">
+                                            <label class="form-check-label" th:for="${'role-' + role}" th:text="${role}"></label>
+                                        </div>
+                                    </div>
+                                    <div class="form-text text-danger mt-2">
+                                        <i class="fas fa-exclamation-triangle"></i> Lưu ý: Thay đổi quyền có thể ảnh hưởng đến quyền truy cập của người dùng.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2 mt-4">
+                                <a th:href="@{/admin/users}" class="btn btn-secondary">Hủy bỏ</a>
+                                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

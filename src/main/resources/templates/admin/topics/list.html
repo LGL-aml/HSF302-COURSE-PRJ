@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title th:text="${title}">Quản lý chủ đề</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold"><i class="fas fa-tags me-2"></i>Quản lý chủ đề</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTopicModal">
+                <i class="fas fa-plus me-1"></i>Thêm chủ đề
+            </button>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên chủ đề</th>
+                                <th>Mô tả</th>
+                                <th>Ngày tạo</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="topic : ${topics}">
+                                <td th:text="${topic.id}">1</td>
+                                <td class="fw-bold text-primary" th:text="${topic.topicName}">Java</td>
+                                <td th:text="${topic.topicDescription}">Mô tả ngắn...</td>
+                                <td th:text="${#temporals.format(topic.createdAt, 'dd/MM/yyyy')}">01/01/2026</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-primary edit-topic-btn" 
+                                                th:data-id="${topic.id}"
+                                                th:data-name="${topic.topicName}"
+                                                th:data-description="${topic.topicDescription}"
+                                                title="Sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <form th:action="@{/admin/topics/{id}/delete(id=${topic.id})}" method="post" 
+                                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa chủ đề này?');" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(topics)}">
+                                <td colspan="5" class="text-center py-4 text-muted">Chưa có chủ đề nào.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Topic Modal -->
+        <div class="modal fade" id="addTopicModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form th:action="@{/admin/topics}" method="post" th:object="${newTopic}">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Thêm chủ đề mới</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Tên chủ đề</label>
+                                <input type="text" class="form-control" th:field="*{name}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Mô tả</label>
+                                <textarea class="form-control" th:field="*{description}" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            <button type="submit" class="btn btn-primary">Lưu</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div layout:fragment="scripts">
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const editButtons = document.querySelectorAll('.edit-topic-btn');
+                editButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+                        const name = this.getAttribute('data-name');
+                        const desc = this.getAttribute('data-description');
+                        // Future: Open edit modal and populate fields
+                        // console.log('Edit topic:', id, name, desc);
+                        alert('Tính năng sửa đang được cập nhật cho topic: ' + name);
+                    });
+                });
+            });
+        </script>
+    </div>
+</body>
+</html>

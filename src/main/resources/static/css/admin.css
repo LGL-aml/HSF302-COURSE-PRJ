@@ -1,0 +1,162 @@
+/* Admin Dashboard Custom Styles */
+
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --info-gradient: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+    --warning-gradient: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+    --danger-gradient: linear-gradient(135deg, #cb2d3e 0%, #ef473a 100%);
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --card-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    --card-hover-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+body {
+    background-color: #f3f4f6;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Card Styles */
+.admin-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+    background: white;
+}
+
+.admin-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.card-icon-bg {
+    position: absolute;
+    right: -20px;
+    bottom: -20px;
+    font-size: 8rem;
+    opacity: 0.1;
+    transform: rotate(15deg);
+}
+
+.bg-gradient-primary { background: var(--primary-gradient) !important; }
+.bg-gradient-success { background: var(--success-gradient) !important; }
+.bg-gradient-info { background: var(--info-gradient) !important; }
+.bg-gradient-warning { background: var(--warning-gradient) !important; }
+.bg-gradient-danger { background: var(--danger-gradient) !important; }
+
+/* Table Styles */
+.admin-table {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.admin-table thead th {
+    border: none;
+    background: transparent;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    padding: 15px 20px;
+}
+
+.admin-table tbody tr {
+    background: white;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.02);
+    transition: transform 0.2s;
+}
+
+.admin-table tbody tr td {
+    border: none;
+    padding: 20px;
+    vertical-align: middle;
+}
+
+.admin-table tbody tr td:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.admin-table tbody tr td:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.admin-table tbody tr:hover {
+    transform: scale(1.01);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+/* Page Header */
+.page-header {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 15px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-title {
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.page-title i {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 10px;
+    border-radius: 10px;
+}
+
+/* Avatar Group */
+.avatar-group {
+    display: flex;
+    align-items: center;
+}
+
+.avatar-group img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid white;
+    margin-left: -15px;
+    transition: transform 0.2s;
+}
+
+.avatar-group img:first-child {
+    margin-left: 0;
+}
+
+.avatar-group img:hover {
+    transform: translateY(-5px);
+    z-index: 2;
+}
+
+/* Buttons */
+.btn-modern {
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: 500;
+    transition: all 0.3s;
+    border: none;
+}
+
+.btn-modern-primary {
+    background: var(--primary-gradient);
+    color: white;
+}.btn-modern-primary:hover {
+    color: white;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px);
+}
