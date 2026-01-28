@@ -5,78 +5,248 @@
       layout:decorate="~{layout}">
 <head>
     <title>Quản lý khóa học - Course Shop</title>
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .stats-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        .table-actions {
+            white-space: nowrap;
+        }
+        .course-thumbnail {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
     <div layout:fragment="content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Quản lý khóa học của tôi</h2>
-            <a th:href="@{/lecturer/courses/create}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Tạo khóa học mới
-            </a>
-        </div>
+        <div class="container-fluid py-4">
+            <!-- Dashboard Header -->
+            <div class="dashboard-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-2"><i class="fas fa-chalkboard-teacher"></i> Quản lý khóa học</h2>
+                        <p class="mb-0 opacity-75">Quản lý và theo dõi các khóa học của bạn</p>
+                    </div>
+                    <a th:href="@{/courses/lecture/create}" class="btn btn-light btn-lg">
+                        <i class="fas fa-plus-circle"></i> Tạo khóa học mới
+                    </a>
+                </div>
+            </div>
 
-        <div th:if="${courses != null and !courses.isEmpty()}" class="row">
-            <div class="col-md-6 mb-4" th:each="course : ${courses}">
-                <div class="card shadow-sm">
-                    <div class="row g-0">
-                        <div class="col-md-4">
-                            <img th:src="${course.coverImage}" class="img-fluid rounded-start" alt="Course"
-                                 style="height: 200px; object-fit: cover; width: 100%;">
+            <!-- Stats Cards -->
+            <div class="row mb-4" th:if="${courses != null}">
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="d-flex align-items-center">
+                            <div class="stats-icon bg-primary bg-opacity-10 text-primary me-3">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Tổng khóa học</div>
+                                <h3 class="mb-0" th:text="${courses.size()}">0</h3>
+                            </div>
                         </div>
-                        <div class="col-md-8">
-                            <div class="card-body">
-                                <h5 class="card-title" th:text="${course.title}">Course Title</h5>
-                                <p class="card-text text-truncate" th:text="${course.description}">Description</p>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="d-flex align-items-center">
+                            <div class="stats-icon bg-success bg-opacity-10 text-success me-3">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Tổng học viên</div>
+                                <h3 class="mb-0" th:text="${#aggregates.sum(courses.![enrollmentCount ?: 0])}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="d-flex align-items-center">
+                            <div class="stats-icon bg-info bg-opacity-10 text-info me-3">
+                                <i class="fas fa-play-circle"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Tổng video</div>
+                                <h3 class="mb-0" th:text="${#aggregates.sum(courses.![modules.size()])}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card">
+                        <div class="d-flex align-items-center">
+                            <div class="stats-icon bg-warning bg-opacity-10 text-warning me-3">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>
+                                <div class="text-muted small">Tổng giờ học</div>
+                                <h3 class="mb-0" th:text="${#aggregates.sum(courses.![duration ?: 0])}">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                                <div class="mb-2">
-                                    <span class="badge bg-info me-2" th:text="${course.topicName}">Topic</span>
-                                    <span class="badge" th:classappend="${course.active} ? 'bg-success' : 'bg-secondary'"
-                                          th:text="${course.active} ? 'Hoạt động' : 'Tạm dừng'">Active</span>
-                                </div>
+            <!-- Error/Success Messages -->
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle"></i> <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
 
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="text-primary fw-bold"
-                                          th:text="${#numbers.formatDecimal(course.price, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">
-                                        500,000 VNĐ
-                                    </span>
-                                    <small class="text-muted">
-                                        <i class="fas fa-users"></i> <span th:text="${course.enrolledCount}">0</span> học viên
-                                    </small>
-                                </div>
+            <!-- Courses Table -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Danh sách khóa học</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${courses != null and !courses.isEmpty()}" class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 100px;">Ảnh bìa</th>
+                                    <th>Tên khóa học</th>
+                                    <th style="width: 120px;">Chủ đề</th>
+                                    <th style="width: 100px;" class="text-center">Học viên</th>
+                                    <th style="width: 100px;" class="text-center">Module</th>
+                                    <th style="width: 120px;">Ngày tạo</th>
+                                    <th style="width: 200px;" class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="course : ${courses}">
+                                    <td>
+                                        <img th:src="${course.coverImage}"
+                                             class="course-thumbnail"
+                                             alt="Course Cover"
+                                             onerror="this.src='https://via.placeholder.com/80x60?text=No+Image'">
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold" th:text="${course.title}">Course Title</div>
+                                        <small class="text-muted" th:text="${#strings.abbreviate(course.description, 60)}">Description</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info" th:text="${course.topicName}">Topic</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success" th:text="${course.enrollmentCount ?: 0}">0</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary" th:text="${course.modules?.size() ?: 0}">0</span>
+                                    </td>
+                                    <td>
+                                        <small th:text="${#temporals.format(course.createdAt, 'dd/MM/yyyy')}">01/01/2024</small>
+                                    </td>
+                                    <td class="table-actions">
+                                        <div class="btn-group" role="group">
+                                            <a th:href="@{/courses/{id}(id=${course.id})}"
+                                               class="btn btn-sm btn-outline-info"
+                                               title="Xem chi tiết">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a th:href="@{/courses/lecture/{id}/edit(id=${course.id})}"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="Chỉnh sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    data-bs-toggle="modal"
+                                                    th:data-bs-target="'#deleteModal' + ${course.id}"
+                                                    title="Xóa">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                                <div class="btn-group w-100" role="group">
-                                    <a th:href="@{/lecturer/courses/{id}/edit(id=${course.id})}"
-                                       class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-edit"></i> Sửa
-                                    </a>
-                                    <a th:href="@{/courses/{id}(id=${course.id})}"
-                                       class="btn btn-sm btn-outline-info">
-                                        <i class="fas fa-eye"></i> Xem
-                                    </a>
-                                    <form th:action="@{/lecturer/courses/{id}/delete(id=${course.id})}"
-                                          method="post" class="d-inline">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                onclick="return confirm('Bạn có chắc muốn xóa khóa học này?')">
-                                            <i class="fas fa-trash"></i> Xóa
-                                        </button>
-                                    </form>
+                    <!-- Empty State -->
+                    <div th:if="${courses == null or courses.isEmpty()}" class="text-center py-5">
+                        <i class="fas fa-book-open fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">Chưa có khóa học nào</h4>
+                        <p class="text-muted mb-4">Hãy tạo khóa học đầu tiên của bạn để bắt đầu!</p>
+                        <a th:href="@{/courses/lecture/create}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus-circle"></i> Tạo khóa học mới
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Confirmation Modals -->
+            <div th:each="course : ${courses}">
+                <div class="modal fade" th:id="'deleteModal' + ${course.id}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-exclamation-triangle"></i> Xác nhận xóa
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Bạn có chắc chắn muốn xóa khóa học:</p>
+                                <p class="fw-bold text-danger" th:text="${course.title}">Course Title</p>
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Lưu ý:</strong> Khóa học sẽ bị ẩn khỏi danh sách nhưng dữ liệu vẫn được lưu trong hệ thống.
                                 </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times"></i> Hủy
+                                </button>
+                                <form th:action="@{/courses/lecture/{id}/delete(id=${course.id})}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-trash"></i> Xóa khóa học
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div th:if="${courses == null or courses.isEmpty()}" class="text-center py-5">
-            <i class="fas fa-chalkboard-teacher fa-5x text-muted mb-3"></i>
-            <h3>Chưa có khóa học nào</h3>
-            <p class="text-muted">Hãy tạo khóa học đầu tiên của bạn!</p>
-            <a th:href="@{/lecturer/courses/create}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Tạo khóa học mới
-            </a>
-        </div>
     </div>
 </body>
 </html>
-

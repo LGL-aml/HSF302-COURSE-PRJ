@@ -8,17 +8,292 @@
 </head>
 <body>
     <div layout:fragment="content">
-        <div class="card">
-            <div class="card-body">
-                <h3>Chỉnh sửa khóa học</h3>
-                <p>Tính năng chỉnh sửa khóa học qua giao diện web đang được phát triển.</p>
-                <p>Hiện tại, vui lòng sử dụng API endpoint: <code>PATCH /api/courses/{id}</code></p>
-                <a th:href="@{/lecturer/courses}" class="btn btn-primary">
+        <div class="container py-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-edit"></i> Chỉnh sửa khóa học</h2>
+                <a th:href="@{/courses/lecture/manage}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Quay lại
                 </a>
             </div>
+
+            <!-- Error Messages -->
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle"></i> <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-body">
+                    <form th:action="@{/courses/lecture/{id}/edit(id=${courseId})}" method="post"
+                          enctype="multipart/form-data" id="editCourseForm">
+
+                        <!-- Basic Information -->
+                        <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-info-circle"></i> Thông tin cơ bản</h5>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="title" class="form-label">Tiêu đề khóa học <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" name="title"
+                                       th:value="${course.title}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="topicId" class="form-label">Chủ đề <span class="text-danger">*</span></label>
+                                <select class="form-select" id="topicId" name="topicId" required>
+                                    <option value="">-- Chọn chủ đề --</option>
+                                    <option th:each="topic : ${topics}"
+                                            th:value="${topic.id}"
+                                            th:text="${topic.name}"
+                                            th:selected="${course.topicName == topic.name}">
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Giá khóa học (VND) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="price" name="price"
+                                   min="0" step="1000" th:value="${course.price}" required>
+                            <small class="text-muted">Nhập giá bằng số, ví dụ: 199000. Nhập 0 cho khóa học miễn phí.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Mô tả ngắn <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="description" name="description"
+                                      rows="2" required th:text="${course.description}"></textarea>
+                            <small class="text-muted">Mô tả ngắn gọn về khóa học (hiển thị trong danh sách)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Nội dung chi tiết <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="content" name="content"
+                                      rows="5" required th:text="${course.content}"></textarea>
+                            <small class="text-muted">Mô tả chi tiết về khóa học, những gì học viên sẽ học được</small>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="duration" class="form-label">Thời lượng (giờ) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="duration" name="duration"
+                                       min="0" step="0.5" th:value="${course.duration}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="coverImage" class="form-label">Ảnh bìa (để trống nếu không đổi)</label>
+                                <input type="file" class="form-control" id="coverImage" name="coverImage"
+                                       accept="image/*">
+                                <small class="text-muted">Định dạng: JPG, PNG. Kích thước khuyến nghị: 1280x720px</small>
+                                <div th:if="${course.coverImage}" class="mt-2">
+                                    <img th:src="${course.coverImage}" alt="Current cover"
+                                         class="img-thumbnail" style="max-height: 100px;">
+                                    <small class="d-block text-muted">Ảnh bìa hiện tại</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modules and Videos -->
+                        <h5 class="border-bottom pb-2 mb-3 mt-4">
+                            <i class="fas fa-list"></i> Module và Video
+                        </h5>
+
+                        <div id="modulesContainer">
+                            <!-- Modules will be added here dynamically -->
+                        </div>
+
+                        <button type="button" class="btn btn-outline-primary mb-4" onclick="addModule()">
+                            <i class="fas fa-plus"></i> Thêm Module
+                        </button>
+
+                        <!-- Hidden field for modules JSON -->
+                        <input type="hidden" id="modules" name="modules">
+
+                        <!-- Submit Buttons -->
+                        <div class="border-top pt-3 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> Lưu thay đổi
+                            </button>
+                            <a th:href="@{/courses/lecture/manage}" class="btn btn-secondary btn-lg ms-2">
+                                <i class="fas fa-times"></i> Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script layout:fragment="scripts" th:inline="javascript">
+        let moduleIndex = 0;
+
+        // Load existing modules data - properly escaped
+        const existingModules = /*[[${course.modules}]]*/ [];
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function addModule(moduleData = null) {
+            const container = document.getElementById('modulesContainer');
+            const moduleDiv = document.createElement('div');
+            moduleDiv.className = 'card mb-3 module-card';
+            moduleDiv.setAttribute('data-module-index', moduleIndex);
+
+            const title = moduleData ? escapeHtml(moduleData.title) : '';
+            const order = moduleData ? moduleData.orderIndex : moduleIndex;
+
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'card-header bg-light d-flex justify-content-between align-items-center';
+            headerDiv.innerHTML = `
+                <strong>Module ${moduleIndex + 1}</strong>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeModule(this)">
+                    <i class="fas fa-trash"></i> Xóa Module
+                </button>
+            `;
+
+            const bodyDiv = document.createElement('div');
+            bodyDiv.className = 'card-body';
+
+            // Module title input
+            const titleGroup = document.createElement('div');
+            titleGroup.className = 'mb-3';
+            titleGroup.innerHTML = `
+                <label class="form-label">Tiêu đề Module <span class="text-danger">*</span></label>
+                <input type="text" class="form-control module-title" value="${title}" required>
+            `;
+
+            // Order input
+            const orderGroup = document.createElement('div');
+            orderGroup.className = 'mb-3';
+            orderGroup.innerHTML = `
+                <label class="form-label">Thứ tự</label>
+                <input type="number" class="form-control module-order" value="${order}" min="0">
+            `;
+
+            // Videos container
+            const videosContainer = document.createElement('div');
+            videosContainer.className = 'videos-container mb-2';
+
+            // Add video button
+            const addVideoBtn = document.createElement('button');
+            addVideoBtn.type = 'button';
+            addVideoBtn.className = 'btn btn-sm btn-outline-secondary';
+            addVideoBtn.onclick = function() { addVideo(this); };
+            addVideoBtn.innerHTML = '<i class="fas fa-plus"></i> Thêm Video';
+
+            bodyDiv.appendChild(titleGroup);
+            bodyDiv.appendChild(orderGroup);
+            bodyDiv.appendChild(videosContainer);
+            bodyDiv.appendChild(addVideoBtn);
+
+            moduleDiv.appendChild(headerDiv);
+            moduleDiv.appendChild(bodyDiv);
+            container.appendChild(moduleDiv);
+
+            // Add existing videos if any
+            if (moduleData && moduleData.videos && moduleData.videos.length > 0) {
+                moduleData.videos.forEach(video => {
+                    addVideoWithData(videosContainer, video);
+                });
+            }
+
+            moduleIndex++;
+        }
+
+        function addVideoWithData(container, videoData) {
+            const videoDiv = document.createElement('div');
+            videoDiv.className = 'row mb-2 video-row';
+
+            const col1 = document.createElement('div');
+            col1.className = 'col-md-5';
+            const titleInput = document.createElement('input');
+            titleInput.type = 'text';
+            titleInput.className = 'form-control video-title';
+            titleInput.placeholder = 'Tiêu đề video';
+            titleInput.value = videoData.title || '';
+            titleInput.required = true;
+            col1.appendChild(titleInput);
+
+            const col2 = document.createElement('div');
+            col2.className = 'col-md-6';
+            const urlInput = document.createElement('input');
+            urlInput.type = 'url';
+            urlInput.className = 'form-control video-url';
+            urlInput.placeholder = 'URL video (YouTube, Vimeo...)';
+            urlInput.value = videoData.videoUrl || '';
+            urlInput.required = true;
+            col2.appendChild(urlInput);
+
+            const col3 = document.createElement('div');
+            col3.className = 'col-md-1';
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-sm btn-danger w-100';
+            deleteBtn.onclick = function() { removeVideo(this); };
+            deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+            col3.appendChild(deleteBtn);
+
+            videoDiv.appendChild(col1);
+            videoDiv.appendChild(col2);
+            videoDiv.appendChild(col3);
+            container.appendChild(videoDiv);
+        }
+
+        function removeModule(button) {
+            if (confirm('Bạn có chắc chắn muốn xóa module này?')) {
+                button.closest('.module-card').remove();
+            }
+        }
+
+        function addVideo(button) {
+            const videosContainer = button.parentElement.querySelector('.videos-container');
+            addVideoWithData(videosContainer, {title: '', videoUrl: ''});
+        }
+
+        function removeVideo(button) {
+            button.closest('.video-row').remove();
+        }
+
+        // Collect modules data before submit
+        document.getElementById('editCourseForm').addEventListener('submit', function(e) {
+            const modules = [];
+            document.querySelectorAll('.module-card').forEach((moduleCard, idx) => {
+                const module = {
+                    title: moduleCard.querySelector('.module-title').value,
+                    orderIndex: parseInt(moduleCard.querySelector('.module-order').value) || idx,
+                    videos: []
+                };
+
+                moduleCard.querySelectorAll('.video-row').forEach(videoRow => {
+                    module.videos.push({
+                        title: videoRow.querySelector('.video-title').value,
+                        videoUrl: videoRow.querySelector('.video-url').value
+                    });
+                });
+
+                modules.push(module);
+            });
+
+            document.getElementById('modules').value = JSON.stringify(modules);
+        });
+
+        // Load existing modules on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('Existing modules:', existingModules);
+            if (existingModules && existingModules.length > 0) {
+                existingModules.forEach(module => {
+                    addModule(module);
+                });
+            } else {
+                // Add one empty module if no existing modules
+                addModule();
+            }
+        });
+    </script>
 </body>
 </html>
-

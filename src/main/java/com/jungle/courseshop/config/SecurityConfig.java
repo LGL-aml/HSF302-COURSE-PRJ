@@ -60,9 +60,11 @@ public class SecurityConfig {
 
                 // Phân quyền URL
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                PUBLIC_URLS
-                        ).permitAll()
+                        .requestMatchers(PUBLIC_URLS).permitAll()
+                        
+                        // Lecturer endpoints - yêu cầu role LECTURER
+                        .requestMatchers("/courses/lecture/**")
+                        .hasRole("LECTURER")
 
                         .requestMatchers("/instructor/**")
                         .hasRole("INSTRUCTOR")

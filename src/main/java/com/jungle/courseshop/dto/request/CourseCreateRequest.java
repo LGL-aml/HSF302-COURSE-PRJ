@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,6 +26,8 @@ public class CourseCreateRequest {
 
     @Positive(message = "Thời lượng khóa học phải lớn hơn 0")
     private Integer duration;
+
+    private BigDecimal price;
 
     //    private List<CourseModuleRequest> modules;
     private String modules;

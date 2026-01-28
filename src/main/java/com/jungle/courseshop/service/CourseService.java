@@ -64,6 +64,7 @@ public class CourseService {
         course.setTitle(request.getTitle());
         course.setTopic(topic);
         course.setDescription(request.getDescription());
+        course.setPrice(request.getPrice() != null ? request.getPrice() : BigDecimal.ZERO);
         course.setContent(request.getContent());
         course.setDuration(request.getDuration());
         course.setActive(true);
@@ -129,6 +130,7 @@ public class CourseService {
         if (request.getDescription() != null) course.setDescription(request.getDescription());
         if (request.getContent() != null) course.setContent(request.getContent());
         if (request.getDuration() != null) course.setDuration(request.getDuration());
+        if (request.getPrice() != null) course.setPrice(request.getPrice());
         if (request.getTopicId() != null) {
             Topic topic = topicRepo.findByIdAndActive(request.getTopicId(), true);
             if (topic == null) {
@@ -358,8 +360,9 @@ public class CourseService {
 
         List<CourseModule> modules = moduleRepository.findByCourseOrderByOrderIndexAsc(course);
 
-        boolean isEnrolled = enrollmentRepository.existsByUserAndCourse(currentUser, course);
-        boolean isOwner = course.getCreator() != null && course.getCreator().equals(currentUser.getId());
+        boolean isEnrolled = currentUser != null && enrollmentRepository.existsByUserAndCourse(currentUser, course);
+        boolean isOwner = currentUser != null && course.getCreator() != null &&
+                          course.getCreator().getId() == currentUser.getId();
 
         if (!isEnrolled && !isOwner) {
             throw new AccessDeniedException("You are not authorized to view this course.");
@@ -429,6 +432,7 @@ public class CourseService {
                 .content(course.getContent())
                 .duration(course.getDuration())
                 .coverImage(course.getCoverImage())
+                .price(course.getPrice())
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .creator(course.getCreator().getFullname())

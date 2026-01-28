@@ -1,8 +1,11 @@
 package com.jungle.courseshop.controller;
 
+import com.jungle.courseshop.dto.request.CourseCreateRequest;
+import com.jungle.courseshop.dto.request.CourseUpdateRequest;
 import com.jungle.courseshop.dto.response.CourseDetailPublicResponse;
 import com.jungle.courseshop.dto.response.CourseEnrollmentResponse;
 import com.jungle.courseshop.dto.response.CourseHomeResponse;
+import com.jungle.courseshop.dto.response.CourseResponse;
 import com.jungle.courseshop.entity.Topic;
 import com.jungle.courseshop.service.CourseEnrollmentService;
 import com.jungle.courseshop.service.CourseService;
@@ -15,11 +18,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @Controller
@@ -83,4 +84,110 @@ public class CourseController {
             return "redirect:/courses";
         }
     }
+
+    @GetMapping("/learn/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public String learnCourse(@PathVariable Long id, Model model) {
+        try {
+            CourseResponse course = courseService.getCourseById(id);
+            model.addAttribute("course", course);
+            model.addAttribute("title", course.getTitle() + " - Học khóa học");
+            return "courses/learn";
+        } catch (Exception e) {
+            log.error("Error loading course for learning", e);
+            model.addAttribute("error", "Không thể tải khóa học. Bạn cần đăng ký khóa học này trước.");
+            return "redirect:/courses/" + id;
+        }
+    }
+
+    @GetMapping("/lecture/manage")
+    @PreAuthorize("hasRole('LECTURER')")
+    public String manageCoursesPage(Model model) {
+        try {
+            List<CourseResponse> courses = courseService.getCoursesByLecturer();
+            model.addAttribute("courses", courses);
+            model.addAttribute("title", "Quản lý khóa học của giảng viên");
+        } catch (Exception e) {
+            log.error("Error loading lecturer courses", e);
+            model.addAttribute("error", "Không thể tải danh sách khóa học");
+        }
+        return "lecturer/courses";
+    }
+
+    @GetMapping("/lecture/create")
+    @PreAuthorize("hasRole('LECTURER')")
+    public String createCourseForm(Model model) {
+        model.addAttribute("course", new CourseCreateRequest());
+        model.addAttribute("topics", topicService.getAll());
+        model.addAttribute("title", "Tạo khóa học mới");
+        return "lecturer/create-course";
+    }
+
+    @PostMapping("/lecture/create")
+    @PreAuthorize("hasRole('LECTURER')")
+    public String createCourseSubmit(@ModelAttribute CourseCreateRequest request, Model model) {
+        try {
+            courseService.createCourse(request);
+            return "redirect:/courses/lecture/manage";
+        } catch (IOException e) {
+            log.error("IO error creating course", e);
+            model.addAttribute("error", "Lỗi khi upload ảnh hoặc xử lý dữ liệu");
+        } catch (Exception e) {
+            log.error("Error creating course", e);
+            model.addAttribute("error", "Không thể tạo khóa học");
+        }
+        model.addAttribute("topics", topicService.getAll());
+        model.addAttribute("course", request);
+        return "lecturer/create-course";
+    }
+
+    @GetMapping("/lecture/{id}/edit")
+    @PreAuthorize("hasRole('LECTURER')")
+    public String editCourseForm(@PathVariable Long id, Model model) {
+        try {
+            CourseResponse course = courseService.getCourseById(id);
+            model.addAttribute("course", course);
+            model.addAttribute("existingCourse", course);
+            model.addAttribute("topics", topicService.getAll());
+            model.addAttribute("title", "Chỉnh sửa khóa học");
+            return "lecturer/edit-course";
+        } catch (Exception e) {
+            log.error("Error loading course for edit", e);
+            model.addAttribute("error", "Không thể tải thông tin khóa học");
+            return "redirect:/courses/lecture/manage";
+        }
+    }
+
+    @PostMapping("/lecture/{id}/edit")
+    @PreAuthorize("hasRole('LECTURER')")
+    public String editCourseSubmit(@PathVariable Long id, @ModelAttribute CourseUpdateRequest request, Model model) {
+        try {
+            courseService.updateCourse(id, request);
+            return "redirect:/courses/lecture/manage";
+        } catch (IOException e) {
+            log.error("IO error updating course", e);
+            model.addAttribute("error", "Lỗi khi upload ảnh hoặc xử lý dữ liệu");
+        } catch (Exception e) {
+            log.error("Error updating course", e);
+            model.addAttribute("error", "Không thể cập nhật khóa học");
+        }
+        model.addAttribute("topics", topicService.getAll());
+        model.addAttribute("courseId", id);
+        model.addAttribute("course", request);
+        return "lecturer/edit-course";
+    }
+
+    @PostMapping("/lecture/{id}/delete")
+    @PreAuthorize("hasRole('LECTURER')")
+    public String deleteCourse(@PathVariable Long id, Model model) {
+        try {
+            courseService.softDeleteCourse(id);
+        } catch (Exception e) {
+            log.error("Error deleting course", e);
+            model.addAttribute("error", "Không thể xóa khóa học");
+            return "redirect:/courses/lecture/manage";
+        }
+        return "redirect:/courses/lecture/manage";
+    }
+
 }

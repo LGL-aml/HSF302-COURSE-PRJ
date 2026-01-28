@@ -56,7 +56,7 @@ public class CartService {
                 .map(item -> CartReponse.CartItemResponse.builder()
                         .courseId(item.getCourse().getId())
                         .courseTitle(item.getCourse().getTitle())
-                        .price(item.getCourse().getPrice()) // BigDecimal
+                        .price(item.getCourse().getPrice() != null ? item.getCourse().getPrice() : BigDecimal.ZERO)
                         .courseThumbnail(item.getCourse().getCoverImage())
                         .lecturerName(item.getCourse().getCreator().getFullname())
                         .build()
@@ -66,6 +66,7 @@ public class CartService {
         // Tính tổng giá giỏ hàng
         BigDecimal totalCartPrice = itemResponses.stream()
                 .map(CartReponse.CartItemResponse::getPrice)
+                .filter(price -> price != null)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return CartReponse.builder()
