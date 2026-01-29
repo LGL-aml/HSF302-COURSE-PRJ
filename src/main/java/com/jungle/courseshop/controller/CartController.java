@@ -42,7 +42,15 @@ public class CartController {
             cartService.addItemToCart(courseId);
 
             if ("true".equals(buyNow)) {
-                // Nếu là "Mua ngay", redirect đến thanh toán ngay
+                // Nếu là "Mua ngay"
+                // Khóa học miễn phí (0đ) thì đăng ký luôn, không qua thanh toán
+                if (orderService.isCourseFree(courseId)) {
+                    orderService.enrollFreeCourseFromCart(courseId);
+                    redirectAttributes.addFlashAttribute("message", "Đăng ký khóa học thành công");
+                    return "redirect:/courses/learn/" + courseId;
+                }
+
+                // Khóa học trả phí thì redirect đến thanh toán
                 return "redirect:/payments/checkout?courseId=" + courseId;
             } else {
                 // Nếu là "Thêm vào giỏ hàng", redirect đến giỏ hàng

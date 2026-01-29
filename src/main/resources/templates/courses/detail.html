@@ -152,27 +152,48 @@
 
                             <!-- If not enrolled -->
                             <div th:if="${course.status.name() == 'NOT_ENROLLED'}" sec:authorize="isAuthenticated()">
-                                <form th:action="@{/cart/add/{id}(id=${course.id})}" method="post" class="mb-2">
-                                    <button type="submit" class="btn btn-warning btn-lg w-100">
-                                        <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ hàng
-                                    </button>
-                                </form>
-                                <form th:action="@{/cart/add/{id}(id=${course.id})}" method="post">
+                                <!-- Free course -->
+                                <form th:if="${course.price == null or course.price <= 0}" th:action="@{/cart/add/{id}(id=${course.id})}" method="post">
                                     <input type="hidden" name="buyNow" value="true">
-                                    <button type="submit" class="btn btn-primary btn-lg w-100">
-                                        <i class="fas fa-bolt me-2"></i>Mua ngay
+                                    <button type="submit" class="btn btn-success btn-lg w-100">
+                                        <i class="fas fa-bolt me-2"></i>Đăng ký ngay
                                     </button>
                                 </form>
+
+                                <!-- Paid course -->
+                                <div th:if="${course.price != null and course.price > 0}">
+                                    <form th:action="@{/cart/add/{id}(id=${course.id})}" method="post" class="mb-2">
+                                        <button type="submit" class="btn btn-warning btn-lg w-100">
+                                            <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ hàng
+                                        </button>
+                                    </form>
+                                    <form th:action="@{/cart/add/{id}(id=${course.id})}" method="post">
+                                        <input type="hidden" name="buyNow" value="true">
+                                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                                            <i class="fas fa-bolt me-2"></i>Mua ngay
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
 
                             <!-- If guest -->
                             <div th:if="${course.status.name() == 'NOT_ENROLLED'}" sec:authorize="!isAuthenticated()">
-                                <a th:href="@{/auth/login}" class="btn btn-primary btn-lg w-100 mb-2">
-                                    <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ hàng
+                                <!-- Free course -->
+                                <a th:if="${course.price == null or course.price <= 0}"
+                                   th:href="@{/login}"
+                                   class="btn btn-success btn-lg w-100">
+                                    <i class="fas fa-bolt me-2"></i>Đăng ký ngay
                                 </a>
-                                <a th:href="@{/auth/register}" class="btn btn-outline-primary btn-lg w-100">
-                                    <i class="fas fa-bolt me-2"></i>Mua ngay
-                                </a>
+
+                                <!-- Paid course -->
+                                <div th:if="${course.price != null and course.price > 0}">
+                                    <a th:href="@{/login}" class="btn btn-primary btn-lg w-100 mb-2">
+                                        <i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ hàng
+                                    </a>
+                                    <a th:href="@{/login}" class="btn btn-outline-primary btn-lg w-100">
+                                        <i class="fas fa-bolt me-2"></i>Mua ngay
+                                    </a>
+                                </div>
                             </div>
                         </div>
 

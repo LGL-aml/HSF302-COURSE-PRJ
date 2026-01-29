@@ -5,7 +5,7 @@ import com.jungle.courseshop.dto.request.UpdateUserRequest;
 import com.jungle.courseshop.dto.response.TopicResponse;
 import com.jungle.courseshop.dto.response.UserDetailResponse;
 import com.jungle.courseshop.entity.Role;
-import com.jungle.courseshop.service.CourseService;
+import com.jungle.courseshop.service.AdminStatsService;
 import com.jungle.courseshop.service.TopicService;
 import com.jungle.courseshop.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -28,21 +28,25 @@ public class AdminController {
 
     private final UserService userService;
     private final TopicService topicService;
-    private final CourseService courseService;
+    private final AdminStatsService adminStatsService;
 
     @GetMapping
-    public String dashboard(Model model) {
-        // Simple stats for dashboard
+    public String dashboard(@RequestParam(value = "period", required = false, defaultValue = "month") String period,
+                            Model model) {
         try {
             List<UserDetailResponse> users = userService.getAllUsers();
-            List<TopicResponse> topics = topicService.getAllTopics();
-            long totalCourses = courseService.getLastestCourses().size(); // Approximate, should use count in repo
-
-            model.addAttribute("totalUsers", users.size());
-            model.addAttribute("totalTopics", topics.size());
-            model.addAttribute("totalCourses", totalCourses); 
             model.addAttribute("recentUsers", users.stream().limit(5).toList());
             model.addAttribute("title", "Admin Dashboard");
+
+            var stats = adminStatsService.getDashboardStats(period);
+            model.addAttribute("stats", stats);
+            model.addAttribute("period", period);
+
+            // Backward-compatible attributes used by existing template cards
+            model.addAttribute("totalUsers", stats.getTotalUsers());
+            model.addAttribute("totalTopics", stats.getTotalTopics());
+            model.addAttribute("totalCourses", stats.getTotalCourses());
+
         } catch (Exception e) {
             log.error("Error loading admin dashboard", e);
             model.addAttribute("error", "Error loading dashboard data");

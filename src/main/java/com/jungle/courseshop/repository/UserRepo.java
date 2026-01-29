@@ -20,4 +20,6 @@ public interface UserRepo extends JpaRepository<User, Long> {
 
     List<User> findByEnabledTrue();
     Optional<User> findByIdAndEnabledTrue(Long id);
+
+    long countByEnabledTrue();
 }

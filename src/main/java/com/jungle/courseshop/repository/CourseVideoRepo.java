@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface CourseVideoRepo extends JpaRepository<CourseVideo, Long> {
     long countByCourseModule_Course(Course course);
+
+    java.util.List<CourseVideo> findByCourseModule_Course_Id(Long courseId);
 }
