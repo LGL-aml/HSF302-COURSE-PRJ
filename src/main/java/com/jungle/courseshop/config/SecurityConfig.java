@@ -17,7 +17,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+//@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -66,10 +66,10 @@ public class SecurityConfig {
                         
                         // Lecturer endpoints - yêu cầu role LECTURER
                         .requestMatchers("/courses/lecture/**")
-                        .hasRole("LECTURER")
+                        .hasAuthority("LECTURER")
 
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
-                        
+
                         .requestMatchers("/instructor/**")
                         .hasRole("INSTRUCTOR")
 

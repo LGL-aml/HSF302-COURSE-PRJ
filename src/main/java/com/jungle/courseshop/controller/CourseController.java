@@ -147,6 +147,7 @@ public class CourseController {
         try {
             CourseResponse course = courseService.getCourseById(id);
             model.addAttribute("course", course);
+            model.addAttribute("courseId", id);  // Add courseId to model
             model.addAttribute("existingCourse", course);
             model.addAttribute("topics", topicService.getAll());
             model.addAttribute("title", "Chỉnh sửa khóa học");
