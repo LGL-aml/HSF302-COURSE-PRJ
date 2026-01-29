@@ -28,4 +28,6 @@ public interface CourseRepo extends JpaRepository<Course, Long> {
             "LOWER(c.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(c.topic.name) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Course> searchCourses(@Param("keyword") String keyword, @Param("topic") Long Topic,  Pageable pageable);
+
+    List<Course> findTop5ByActiveTrueOrderByEnrolledCountDesc();
 }

@@ -88,6 +88,106 @@
             </div>
         </div>
 
+        <!-- Charts + Export -->
+        <div class="admin-card p-4 mb-4">
+            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3">
+                <h5 class="fw-bold mb-0 text-secondary"><i class="fas fa-chart-area me-2"></i>Thống kê</h5>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <form method="get" th:action="@{/admin}" class="d-flex gap-2 align-items-center">
+                        <select class="form-select form-select-sm" name="period" style="min-width: 180px;">
+                            <option value="month" th:selected="${period == 'month'}">30 ngày gần nhất</option>
+                            <option value="year" th:selected="${period == 'year'}">12 tháng gần nhất</option>
+                        </select>
+                        <button class="btn btn-sm btn-primary" type="submit">Lọc</button>
+                    </form>
+
+                    <a class="btn btn-sm btn-outline-success" th:href="@{/admin/stats/export.xlsx(period=${period})}">Xuất Excel</a>
+                    <a class="btn btn-sm btn-outline-danger" th:href="@{/admin/stats/export.pdf(period=${period})}">Xuất PDF</a>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <canvas id="revenueChart" height="120"></canvas>
+                </div>
+                <div class="col-lg-4">
+                    <div class="p-3 border rounded-3 h-100">
+                        <div class="fw-bold mb-2">Tổng đơn đã thanh toán</div>
+                        <div class="display-6 fw-bold" th:text="${stats.totalPaidOrders}">0</div>
+                        <hr />
+                        <div class="fw-bold mb-2">Tổng doanh thu</div>
+                        <div class="display-6 fw-bold" th:text="${stats.totalRevenue}">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <h6 class="fw-bold text-secondary mb-3">Top khóa học</h6>
+                <div class="table-responsive">
+                    <table class="table admin-table text-nowrap">
+                        <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tiêu đề</th>
+                            <th>Enrollments</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="c : ${stats.topCourses}">
+                            <td th:text="${c.courseId}">1</td>
+                            <td th:text="${c.title}">Course</td>
+                            <td th:text="${c.enrollments}">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script th:inline="javascript">
+            const labels = /*[[${stats.labels}]]*/ [];
+            const revenueData = /*[[${stats.revenueSeries}]]*/ [];
+            const ordersData = /*[[${stats.paidOrdersSeries}]]*/ [];
+
+            const ctx = document.getElementById('revenueChart');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Doanh thu',
+                            data: revenueData,
+                            borderColor: 'rgba(25, 135, 84, 1)',
+                            backgroundColor: 'rgba(25, 135, 84, 0.15)',
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Đơn đã thanh toán',
+                            data: ordersData,
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    stacked: false,
+                    scales: {
+                        y: { type: 'linear', display: true, position: 'left' },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+        </script>
+
         <!-- Recent Users Table -->
         <div class="admin-card p-4">
             <h5 class="fw-bold mb-4 text-secondary"><i class="fas fa-user-clock me-2"></i>Người dùng mới tham gia</h5>

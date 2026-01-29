@@ -104,6 +104,26 @@
                     </div>
                 </div>
 
+                <!-- Feedback / Comments -->
+                <div class="card shadow-sm mt-3" id="feedbackSection">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-comments"></i> Thảo luận</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <textarea id="commentInput" class="form-control" rows="3" placeholder="Viết bình luận..." disabled></textarea>
+                            <div class="d-flex justify-content-end mt-2">
+                                <button id="commentSubmitBtn" class="btn btn-primary" disabled>Gửi bình luận</button>
+                            </div>
+                            <small class="text-muted">Chọn video để xem và gửi bình luận.</small>
+                        </div>
+
+                        <div id="commentsContainer" class="mt-3">
+                            <div class="text-muted">Chưa có bình luận.</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Course Description -->
                 <div class="card shadow-sm mt-3">
                     <div class="card-header">
@@ -232,6 +252,10 @@
         // Enable buttons
         document.getElementById('markCompleteBtn').disabled = false;
         updateNavigationButtons();
+
+        // Feedback: enable comment UI + load comments for this video
+        enableCommentUI(true);
+        loadComments(videoId);
     }
 
     function updateNavigationButtons() {
@@ -288,6 +312,136 @@
             alert('Có lỗi xảy ra');
         });
     });
+
+    async function getJson(url) {
+        const res = await fetch(url);
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || ('HTTP ' + res.status));
+        }
+        return res.json();
+    }
+
+    async function postJson(url, data) {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || ('HTTP ' + res.status));
+        }
+        return res.json();
+    }
+
+    function enableCommentUI(enabled) {
+        document.getElementById('commentInput').disabled = !enabled;
+        document.getElementById('commentSubmitBtn').disabled = !enabled;
+    }
+
+    function formatTime(iso) {
+        if (!iso) return '';
+        try {
+            const d = new Date(iso);
+            return d.toLocaleString();
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;','\'':'&#39;'}[c] || c));
+    }
+
+    function renderCommentItem(c, isReply) {
+        const avatar = c.avatar ? c.avatar : '/images/default-avatar.png';
+        const marginLeft = isReply ? 'ms-5' : '';
+        const replyBtn = `<button class="btn btn-sm btn-outline-secondary" onclick="toggleReplyForm(${c.id})">Trả lời</button>`;
+
+        return `
+            <div class="d-flex gap-3 mb-3 ${marginLeft}">
+                <img src="${avatar}" class="rounded-circle" style="width:40px;height:40px;object-fit:cover;" />
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2">
+                        <strong>${escapeHtml(c.username || '')}</strong>
+                        <span class="text-muted small">${formatTime(c.createdAt)}</span>
+                    </div>
+                    <div class="mt-1">${escapeHtml(c.content || '')}</div>
+                    <div class="mt-2 d-flex gap-2">
+                        ${replyBtn}
+                    </div>
+                    <div id="replyForm-${c.id}" class="mt-2" style="display:none;">
+                        <textarea class="form-control" rows="2" id="replyInput-${c.id}" placeholder="Nhập trả lời..."></textarea>
+                        <div class="d-flex justify-content-end mt-2">
+                            <button class="btn btn-sm btn-primary" onclick="submitReply(${c.id})">Gửi</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderComments(list) {
+        const container = document.getElementById('commentsContainer');
+        if (!list || list.length === 0) {
+            container.innerHTML = '<div class="text-muted">Chưa có bình luận.</div>';
+            return;
+        }
+        let html = '';
+        for (const c of list) {
+            html += renderCommentItem(c, false);
+            if (c.replies && c.replies.length) {
+                for (const r of c.replies) {
+                    html += renderCommentItem(r, true);
+                }
+            }
+        }
+        container.innerHTML = html;
+    }
+
+    async function loadComments(videoId) {
+        try {
+            const list = await getJson(`/api/feedback/videos/${videoId}`);
+            renderComments(list);
+        } catch (e) {
+            document.getElementById('commentsContainer').innerHTML = `<div class="text-danger">Không tải được bình luận: ${escapeHtml(e.message)}</div>`;
+        }
+    }
+
+    async function submitComment() {
+        if (!currentVideoId) return;
+        const content = document.getElementById('commentInput').value;
+        try {
+            await postJson(`/api/feedback/videos/${currentVideoId}`, { content });
+            document.getElementById('commentInput').value = '';
+            await loadComments(currentVideoId);
+        } catch (e) {
+            alert('Không gửi được bình luận: ' + e.message);
+        }
+    }
+
+    function toggleReplyForm(commentId) {
+        const el = document.getElementById('replyForm-' + commentId);
+        if (!el) return;
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function submitReply(commentId) {
+        if (!currentVideoId) return;
+        const input = document.getElementById('replyInput-' + commentId);
+        const content = input ? input.value : '';
+        try {
+            await postJson(`/api/feedback/${commentId}/reply`, { content });
+            if (input) input.value = '';
+            await loadComments(currentVideoId);
+        } catch (e) {
+            alert('Không gửi được trả lời: ' + e.message);
+        }
+    }
+
+    document.getElementById('commentSubmitBtn').addEventListener('click', submitComment);
 
     function updateProgress() {
         const watchedCount = document.querySelectorAll('.video-item.watched').length;

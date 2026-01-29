@@ -2,6 +2,7 @@ package com.jungle.courseshop.service;
 
 import com.jungle.courseshop.entity.*;
 import com.jungle.courseshop.repository.CartRepo;
+import com.jungle.courseshop.repository.CourseRepo;
 import com.jungle.courseshop.repository.OrderItemRepo;
 import com.jungle.courseshop.repository.OrderRepo;
 import com.jungle.courseshop.repository.UserRepo;
@@ -28,12 +29,52 @@ public class OrderService {
 
     private final CartService cartService;
     private final CartRepo cartRepo;
+    private final CourseRepo courseRepo;
     private final OrderRepo orderRepository;
     private final OrderItemRepo orderItemRepository;
     private final VnPayService vnPayService;
     private final UserRepo userRepo;
     private final CourseEnrollmentService courseEnrollmentService;
     private final NotificationService notificationService;
+
+
+    public boolean isCourseFree(Long courseId) {
+        if (courseId == null) return false;
+        Course course = courseRepo.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+        return course.getPrice() == null || course.getPrice().compareTo(BigDecimal.ZERO) <= 0;
+    }
+
+    @Transactional
+    public void enrollFreeCourseFromCart(Long courseId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Cart cart = cartRepo.findByUserId(user.getId());
+        if (cart == null || cart.getItems() == null || cart.getItems().isEmpty()) {
+            throw new RuntimeException("Cart is empty");
+        }
+
+        CartItem item = cart.getItems().stream()
+                .filter(i -> i.getCourse() != null && i.getCourse().getId().equals(courseId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Course not found in cart"));
+
+        Course course = item.getCourse();
+        if (course.getPrice() != null && course.getPrice().compareTo(BigDecimal.ZERO) > 0) {
+            throw new IllegalArgumentException("Course is not free");
+        }
+
+        try {
+            courseEnrollmentService.enrollUserToCourse(user, course);
+            cartService.removeItemFromCart(user.getId(), course.getId());
+        } catch (Exception e) {
+            throw new RuntimeException("Không thể đăng ký khóa học: " + e.getMessage(), e);
+        }
+    }
 
 
     @Transactional
