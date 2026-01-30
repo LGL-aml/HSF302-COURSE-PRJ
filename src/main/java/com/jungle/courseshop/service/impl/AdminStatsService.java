@@ -1,4 +1,4 @@
-package com.jungle.courseshop.service;
+package com.jungle.courseshop.service.impl;
 
 import com.jungle.courseshop.dto.response.AdminStatsResponse;
 import com.jungle.courseshop.entity.*;

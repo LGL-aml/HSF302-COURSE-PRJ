@@ -12,6 +12,50 @@ main {
     flex: 1;
 }
 
+/* Footer Styles */
+footer {
+    background-color: #212529 !important;
+}
+
+footer h5, footer h6 {
+    color: #ffffff !important;
+}
+
+footer .text-muted {
+    color: #adb5bd !important;
+}
+
+footer .footer-link {
+    color: #adb5bd !important;
+    transition: color 0.3s ease;
+}
+
+footer .footer-link:hover {
+    color: #ffffff !important;
+}
+
+footer .social-links a {
+    color: #ffffff !important;
+    transition: all 0.3s ease;
+}
+
+footer .social-links a:hover {
+    color: #0d6efd !important;
+    transform: translateY(-2px);
+}
+
+footer .payment-methods i {
+    color: #adb5bd !important;
+}
+
+footer .bg-black {
+    background-color: #000000 !important;
+}
+
+footer .bg-black .text-muted {
+    color: #6c757d !important;
+}
+
 /* 3D Utilities */
 .perspective-container {
     perspective: 1000px;

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Xác nhận thông tin - Đăng ký Giảng viên</title>
+    <style>
+        .kyc-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .kyc-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .kyc-header h1 {
+            color: #4f46e5;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .kyc-header p {
+            color: #64748b;
+        }
+
+        .steps-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 0.75rem;
+        }
+
+        .step.active .step-number {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .step-text {
+            font-weight: 500;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .step.active .step-text {
+            color: #4f46e5;
+        }
+
+        .step.completed .step-text {
+            color: #10b981;
+        }
+
+        .step-line {
+            width: 40px;
+            height: 2px;
+            background: #e2e8f0;
+        }
+
+        .step-line.completed {
+            background: #10b981;
+        }
+
+        .review-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            color: #4f46e5;
+            margin-right: 0.75rem;
+        }
+
+        .info-row {
+            display: flex;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            width: 180px;
+            font-weight: 500;
+            color: #64748b;
+            flex-shrink: 0;
+        }
+
+        .info-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .form-control-custom {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control-custom:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-label-custom {
+            font-weight: 500;
+            color: #334155;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border: none;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-back {
+            background: #f1f5f9;
+            color: #475569;
+            border: none;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .verified-badge {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .verified-badge i {
+            margin-right: 0.25rem;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .warning-box p {
+            margin: 0;
+            color: #92400e;
+            font-size: 0.875rem;
+        }
+
+        .gender-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .gender-male {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .gender-female {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+
+        .submit-section {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+            color: white;
+        }
+
+        .submit-section h5 {
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .btn-submit-large {
+            background: white;
+            color: #4f46e5;
+            border: none;
+            padding: 1rem 3rem;
+            font-weight: 700;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .btn-submit-large:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            color: #4f46e5;
+        }
+
+        .btn-submit-large i {
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="kyc-container">
+        <!-- Header -->
+        <div class="kyc-header">
+            <h1><i class="fas fa-user-check me-2"></i>Xác nhận thông tin</h1>
+            <p>Vui lòng kiểm tra lại thông tin đã bóc tách từ CCCD của bạn</p>
+        </div>
+
+        <!-- Steps -->
+        <div class="steps-container">
+            <div class="step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <span class="step-text">Tải ảnh CCCD</span>
+            </div>
+            <div class="step-line completed"></div>
+            <div class="step active">
+                <div class="step-number">2</div>
+                <span class="step-text">Xác nhận thông tin</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <span class="step-text">Hoàn tất</span>
+            </div>
+        </div>
+
+        <!-- Warning Box -->
+        <div class="warning-box">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-exclamation-triangle me-2 mt-1" style="color: #f59e0b;"></i>
+                <p><strong>Lưu ý:</strong> Vui lòng kiểm tra kỹ thông tin bên dưới. Nếu có sai sót, bạn có thể quay lại và chụp lại ảnh CCCD rõ hơn.</p>
+            </div>
+        </div>
+
+        <form th:action="@{/lecturer/kyc/confirm}" method="post" th:object="${lecturerForm}" id="reviewForm">
+            <!-- Extracted Info Card -->
+            <div class="review-card">
+                <h5 class="section-title">
+                    <i class="fas fa-id-card"></i>
+                    Thông tin từ CCCD
+                    <span class="verified-badge ms-auto">
+                        <i class="fas fa-check-circle"></i> Đã xác thực
+                    </span>
+                </h5>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="info-row">
+                            <span class="info-label">Số CCCD:</span>
+                            <span class="info-value" th:text="*{identifyNumber}">012345678901</span>
+                            <input type="hidden" th:field="*{identifyNumber}">
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Họ và tên:</span>
+                            <span class="info-value" th:text="*{fullName}">NGUYEN VAN A</span>
+                            <input type="hidden" th:field="*{fullName}">
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Ngày sinh:</span>
+                            <span class="info-value" th:text="*{birthDate}">01/01/1990</span>
+                            <input type="hidden" th:field="*{birthDate}">
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Giới tính:</span>
+                            <span class="info-value">
+                                <span th:class="*{gender == 'Nam' ? 'gender-badge gender-male' : 'gender-badge gender-female'}"
+                                      th:text="*{gender}">Nam</span>
+                            </span>
+                            <input type="hidden" th:field="*{gender}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="info-row">
+                            <span class="info-label">Nơi thường trú:</span>
+                            <span class="info-value" th:text="*{recentLocation}">Địa chỉ</span>
+                            <input type="hidden" th:field="*{recentLocation}">
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Quốc tịch:</span>
+                            <span class="info-value" th:text="*{nationality}">Việt Nam</span>
+                            <input type="hidden" th:field="*{nationality}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Info Card -->
+            <div class="review-card">
+                <h5 class="section-title">
+                    <i class="fas fa-user-tie"></i>
+                    Thông tin bổ sung
+                </h5>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label-custom">Số điện thoại <span class="text-danger">*</span></label>
+                        <input type="tel" class="form-control form-control-custom" th:field="*{phone}"
+                               placeholder="Nhập số điện thoại" required pattern="[0-9]{10,11}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-custom">Email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control form-control-custom" th:field="*{email}"
+                               placeholder="Nhập email liên hệ" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-custom">Chuyên môn / Lĩnh vực giảng dạy <span class="text-danger">*</span></label>
+                        <select class="form-control form-control-custom" th:field="*{domainExpertise}" required>
+                            <option value="">-- Chọn lĩnh vực --</option>
+                            <option value="programming">Lập trình</option>
+                            <option value="design">Thiết kế</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="business">Kinh doanh</option>
+                            <option value="language">Ngoại ngữ</option>
+                            <option value="music">Âm nhạc</option>
+                            <option value="other">Khác</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-custom">Địa chỉ liên hệ</label>
+                        <input type="text" class="form-control form-control-custom" th:field="*{address}"
+                               placeholder="Nhập địa chỉ liên hệ">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label-custom">
+                            <i class="fas fa-pen me-1"></i> Giới thiệu bản thân <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control form-control-custom" th:field="*{bio}" rows="5"
+                                  placeholder="Chia sẻ về kinh nghiệm, kỹ năng và mục tiêu giảng dạy của bạn. Ví dụ:
+- Bằng cấp và chứng chỉ
+- Kinh nghiệm làm việc
+- Các dự án đã thực hiện
+- Phong cách giảng dạy
+- Mục tiêu nghề nghiệp" required minlength="100"></textarea>
+                        <small class="text-muted">Tối thiểu 100 ký tự</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terms & Conditions -->
+            <div class="review-card">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                    <label class="form-check-label" for="agreeTerms">
+                        Tôi xác nhận thông tin trên là chính xác và đồng ý với
+                        <a href="#" class="text-primary fw-bold">Điều khoản dịch vụ</a> và
+                        <a href="#" class="text-primary fw-bold">Chính sách bảo mật</a> của nền tảng.
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submit Section - Nổi bật -->
+            <div class="submit-section">
+                <h5><i class="fas fa-rocket me-2"></i>Sẵn sàng bắt đầu?</h5>
+                <p class="mb-4 opacity-75">Bấm nút bên dưới để hoàn tất đăng ký và trở thành giảng viên</p>
+                <button type="submit" class="btn btn-submit-large" id="submitBtn">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Xác nhận và Đăng ký làm Giảng viên
+                </button>
+                <p class="mt-3 mb-0 small opacity-75">
+                    <i class="fas fa-shield-alt me-1"></i>
+                    Thông tin của bạn được mã hóa và bảo mật tuyệt đối
+                </p>
+            </div>
+
+            <!-- Back Button -->
+            <div class="text-center mt-3">
+                <a th:href="@{/lecturer/kyc/upload}" class="btn btn-back">
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại tải ảnh CCCD
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        // Form validation
+        document.getElementById('reviewForm').addEventListener('submit', function(e) {
+            const bio = document.querySelector('textarea[name="bio"]').value;
+            if (bio.length < 100) {
+                e.preventDefault();
+                alert('Phần giới thiệu bản thân phải có ít nhất 100 ký tự');
+                return false;
+            }
+
+            const agreeTerms = document.getElementById('agreeTerms').checked;
+            if (!agreeTerms) {
+                e.preventDefault();
+                alert('Vui lòng đồng ý với điều khoản dịch vụ');
+                return false;
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>

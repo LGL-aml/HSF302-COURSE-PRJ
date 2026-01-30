@@ -1,9 +1,11 @@
 package com.jungle.courseshop.controller;
 
 import com.jungle.courseshop.dto.request.UpdateUserRequest;
+import com.jungle.courseshop.dto.response.UserDetailResponse;
 import com.jungle.courseshop.entity.User;
 import com.jungle.courseshop.repository.UserRepo;
 import com.jungle.courseshop.service.UserService;
+import com.jungle.courseshop.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,17 +23,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Slf4j
 public class ProfileController {
 
-    private final UserRepo userRepo;
     private final UserService userService;
 
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
     public String profilePage(Model model) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
 
-        User user = userRepo.findByUsernameAndEnabledTrue(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        UserDetailResponse user = userService.getUserByUsername();
 
         model.addAttribute("user", user);
         model.addAttribute("updateUserRequest", new UpdateUserRequest());

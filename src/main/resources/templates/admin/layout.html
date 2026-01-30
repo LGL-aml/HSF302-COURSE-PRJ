@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} ?: 'Admin Dashboard'">Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --header-height: 60px;
+            --primary-dark: #1a1c23;
+            --sidebar-bg: #252836;
+            --card-bg: #2d303e;
+            --accent-color: #6c5ce7;
+            --text-muted: #a0a0a0;
+        }
+
+        body {
+            background-color: #1a1c23;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--sidebar-bg);
+            padding: 1rem;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-brand h4 {
+            color: #fff;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .sidebar-nav .nav-link {
+            color: var(--text-muted);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-nav .nav-link:hover,
+        .sidebar-nav .nav-link.active {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        .sidebar-nav .nav-link i {
+            width: 24px;
+            margin-right: 10px;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+
+        /* Top Header */
+        .top-header {
+            background: var(--sidebar-bg);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .search-box {
+            background: var(--card-bg);
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            color: #fff;
+            width: 300px;
+        }
+
+        .search-box::placeholder {
+            color: var(--text-muted);
+        }
+
+        .user-dropdown .dropdown-toggle {
+            background: transparent;
+            border: none;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-dropdown .dropdown-toggle::after {
+            display: none;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-dropdown .dropdown-menu {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .user-dropdown .dropdown-item {
+            color: var(--text-muted);
+        }
+
+        .user-dropdown .dropdown-item:hover {
+            background: var(--accent-color);
+            color: #fff;
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: 2rem;
+        }
+
+        /* Cards */
+        .admin-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: none;
+            padding: 1.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h4><i class="fas fa-shield-alt me-2"></i>Admin Panel</h4>
+        </div>
+
+        <nav class="sidebar-nav">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/admin/dashboard}" th:classappend="${currentPage == 'dashboard'} ? 'active' : ''">
+                        <i class="fas fa-tachometer-alt"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/admin/users}" th:classappend="${currentPage == 'users'} ? 'active' : ''">
+                        <i class="fas fa-users"></i>Quản lý người dùng
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/admin/topics}" th:classappend="${currentPage == 'topics'} ? 'active' : ''">
+                        <i class="fas fa-tags"></i>Quản lý chủ đề
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/admin/lecturers}" th:classappend="${currentPage == 'lecturers'} ? 'active' : ''">
+                        <i class="fas fa-chalkboard-teacher"></i>Hồ sơ giảng viên
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/admin/courses}" th:classappend="${currentPage == 'courses'} ? 'active' : ''">
+                        <i class="fas fa-book"></i>Quản lý khóa học
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/admin/orders}" th:classappend="${currentPage == 'orders'} ? 'active' : ''">
+                        <i class="fas fa-shopping-cart"></i>Quản lý đơn hàng
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/admin/reports}" th:classappend="${currentPage == 'reports'} ? 'active' : ''">
+                        <i class="fas fa-chart-bar"></i>Báo cáo thống kê
+                    </a>
+                </li>
+                <li class="nav-item mt-4">
+                    <a class="nav-link" th:href="@{/admin/settings}">
+                        <i class="fas fa-cog"></i>Cài đặt
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Back to Main Site -->
+        <div class="mt-auto pt-4 border-top border-secondary">
+            <a class="nav-link text-muted" th:href="@{/}">
+                <i class="fas fa-arrow-left me-2"></i>Về trang chính
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-link text-white d-lg-none me-3" id="sidebarToggle">
+                    <i class="fas fa-bars fa-lg"></i>
+                </button>
+                <input type="text" class="search-box" placeholder="Tìm kiếm...">
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <!-- Notifications -->
+                <div class="dropdown">
+                    <button class="btn btn-link text-white position-relative" data-bs-toggle="dropdown">
+                        <i class="fas fa-bell fa-lg"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            3
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" style="background: var(--card-bg); border-color: rgba(255,255,255,0.1);">
+                        <li><h6 class="dropdown-header text-white">Thông báo</h6></li>
+                        <li><a class="dropdown-item text-muted" href="#">Đơn hàng mới #123</a></li>
+                        <li><a class="dropdown-item text-muted" href="#">Người dùng mới đăng ký</a></li>
+                        <li><a class="dropdown-item text-muted" href="#">Báo cáo hệ thống</a></li>
+                    </ul>
+                </div>
+
+                <!-- User Dropdown -->
+                <div class="dropdown user-dropdown">
+                    <button class="dropdown-toggle" data-bs-toggle="dropdown">
+                        <img src="https://via.placeholder.com/40" alt="Avatar" class="user-avatar">
+                        <div class="text-start d-none d-md-block">
+                            <div class="fw-semibold" sec:authentication="name">Admin</div>
+                            <small class="text-muted">Quản trị viên</small>
+                        </div>
+                        <i class="fas fa-chevron-down ms-2"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/profile}">
+                                <i class="fas fa-user me-2"></i>Hồ sơ cá nhân
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/admin/settings}">
+                                <i class="fas fa-cog me-2"></i>Cài đặt
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Alert Messages -->
+            <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span th:text="${message}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Page Content -->
+            <div layout:fragment="content">
+                <p>Nội dung đang được cập nhật...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sidebar toggle for mobile
+        document.getElementById('sidebarToggle')?.addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('show');
+        });
+    </script>
+    <div layout:fragment="scripts">
+        <!-- Page specific scripts will be inserted here -->
+    </div>
+</body>
+</html>

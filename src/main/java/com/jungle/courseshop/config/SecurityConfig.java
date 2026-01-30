@@ -1,14 +1,12 @@
 package com.jungle.courseshop.config;
 
-import com.jungle.courseshop.service.UserDetailServiceCustomizer;
+import com.jungle.courseshop.service.impl.UserDetailServiceCustomizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,11 +15,11 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-//@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final UserDetailServiceCustomizer userDetailsService;
+    private final CustomAuthenticationSuccessHandler authenticationSuccessHandler;
 
     private final String[] PUBLIC_URLS = {
             "/",
@@ -34,6 +32,7 @@ public class SecurityConfig {
             "/js/**",
             "/images/**",
             "/static/**",
+            "/lecturer/kyc/**",
             "/payments/vn-pay-callback"
     };
 
@@ -71,6 +70,8 @@ public class SecurityConfig {
 
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
 
+                        .requestMatchers("/lecturer/**").hasAuthority("LECTURER")
+
                         .requestMatchers("/instructor/**")
                         .hasRole("INSTRUCTOR")
 
@@ -80,11 +81,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // Login form
+                // Login form - sử dụng custom success handler
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/", true)
+                        .successHandler(authenticationSuccessHandler)
                         .failureUrl("/login?error")
                         .permitAll()
                 )

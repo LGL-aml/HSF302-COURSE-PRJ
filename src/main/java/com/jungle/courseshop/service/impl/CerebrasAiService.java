@@ -1,4 +1,4 @@
-package com.jungle.courseshop.service;
+package com.jungle.courseshop.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

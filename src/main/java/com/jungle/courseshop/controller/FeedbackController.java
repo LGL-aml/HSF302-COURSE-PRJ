@@ -3,6 +3,7 @@ package com.jungle.courseshop.controller;
 import com.jungle.courseshop.dto.request.FeedbackCreateRequest;
 import com.jungle.courseshop.dto.response.FeedbackResponse;
 import com.jungle.courseshop.service.FeedbackService;
+import com.jungle.courseshop.service.impl.FeedbackServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

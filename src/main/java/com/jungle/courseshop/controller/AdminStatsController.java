@@ -1,8 +1,8 @@
 package com.jungle.courseshop.controller;
 
 import com.jungle.courseshop.dto.response.AdminStatsResponse;
-import com.jungle.courseshop.service.AdminStatsExportService;
-import com.jungle.courseshop.service.AdminStatsService;
+import com.jungle.courseshop.service.impl.AdminStatsExportService;
+import com.jungle.courseshop.service.impl.AdminStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;

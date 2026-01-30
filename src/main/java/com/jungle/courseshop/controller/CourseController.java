@@ -7,9 +7,9 @@ import com.jungle.courseshop.dto.response.CourseEnrollmentResponse;
 import com.jungle.courseshop.dto.response.CourseHomeResponse;
 import com.jungle.courseshop.dto.response.CourseResponse;
 import com.jungle.courseshop.entity.Topic;
-import com.jungle.courseshop.service.CourseEnrollmentService;
-import com.jungle.courseshop.service.CourseService;
-import com.jungle.courseshop.service.TopicService;
+import com.jungle.courseshop.service.impl.CourseEnrollmentServiceImpl;
+import com.jungle.courseshop.service.impl.CourseServiceImpl;
+import com.jungle.courseshop.service.impl.TopicServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,11 +29,11 @@ import java.util.List;
 @Slf4j
 public class CourseController {
 
-    private final CourseEnrollmentService enrollmentService;
+    private final CourseEnrollmentServiceImpl enrollmentService;
 
-    private final CourseService courseService;
+    private final CourseServiceImpl courseService;
 
-    private final TopicService topicService;
+    private final TopicServiceImpl topicService;
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")

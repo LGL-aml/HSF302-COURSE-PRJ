@@ -1,4 +1,4 @@
-package com.jungle.courseshop.service;
+package com.jungle.courseshop.service.impl;
 
 import com.jungle.courseshop.repository.UserRepo;
 import lombok.RequiredArgsConstructor;

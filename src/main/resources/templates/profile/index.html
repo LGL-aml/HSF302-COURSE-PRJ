@@ -16,7 +16,7 @@
                          class="rounded-circle mb-3"
                          style="width: 120px; height: 120px; object-fit: cover;"
                          alt="Avatar">
-                    <h4 class="mb-1" th:text="${user.fullname}">Full name</h4>
+                    <h4 class="mb-1" th:text="${user.fullName}">Full name</h4>
                     <div class="text-muted" th:text="${user.username}">username</div>
                     <div class="mt-2">
                         <span class="badge bg-secondary" th:text="${user.role}">ROLE</span>
@@ -35,7 +35,7 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Họ và tên</label>
-                                <input class="form-control" type="text" th:field="*{fullname}" th:placeholder="${user.fullname}">
+                                <input class="form-control" type="text" th:field="*{fullname}" th:placeholder="${user.fullName}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>

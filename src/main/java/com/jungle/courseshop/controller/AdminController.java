@@ -4,10 +4,11 @@ import com.jungle.courseshop.dto.request.TopicRequest;
 import com.jungle.courseshop.dto.request.UpdateUserRequest;
 import com.jungle.courseshop.dto.response.TopicResponse;
 import com.jungle.courseshop.dto.response.UserDetailResponse;
+import com.jungle.courseshop.entity.Lecturer;
 import com.jungle.courseshop.entity.Role;
-import com.jungle.courseshop.service.AdminStatsService;
-import com.jungle.courseshop.service.TopicService;
-import com.jungle.courseshop.service.UserService;
+import com.jungle.courseshop.service.impl.AdminStatsService;
+import com.jungle.courseshop.service.impl.TopicServiceImpl;
+import com.jungle.courseshop.service.impl.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,11 +27,11 @@ import java.util.List;
 @PreAuthorize("hasAuthority('ADMIN')")
 public class AdminController {
 
-    private final UserService userService;
-    private final TopicService topicService;
+    private final UserServiceImpl userService;
+    private final TopicServiceImpl topicService;
     private final AdminStatsService adminStatsService;
 
-    @GetMapping
+    @GetMapping("/dashboard")
     public String dashboard(@RequestParam(value = "period", required = false, defaultValue = "month") String period,
                             Model model) {
         try {
@@ -183,5 +184,59 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
         }
         return "redirect:/admin/topics";
+    }
+
+    // --- Lecturer Management ---
+
+    @GetMapping("/lecturers")
+    public String lecturersList(Model model) {
+        try {
+            List<Lecturer> lecturers = userService.getLecturers();
+            model.addAttribute("lecturers", lecturers);
+            model.addAttribute("title", "Quản lý hồ sơ giảng viên");
+        } catch (Exception e) {
+            log.error("Error loading lecturers", e);
+            model.addAttribute("error", "Không thể tải danh sách hồ sơ giảng viên");
+        }
+        return "admin/lecturers/list";
+    }
+
+    @GetMapping("/lecturers/{id}")
+    public String lecturerDetail(@PathVariable Long id, Model model) {
+        try {
+            Lecturer lecturer = userService.getLecturerById(id);
+            model.addAttribute("lecturer", lecturer);
+            model.addAttribute("title", "Chi tiết hồ sơ giảng viên");
+        } catch (Exception e) {
+            log.error("Error loading lecturer detail", e);
+            return "redirect:/admin/lecturers";
+        }
+        return "admin/lecturers/detail";
+    }
+
+    @PostMapping("/lecturers/{id}/approve")
+    public String approveLecturer(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            userService.approveLecturer(id);
+            redirectAttributes.addFlashAttribute("message", "Đã phê duyệt hồ sơ giảng viên thành công");
+        } catch (Exception e) {
+            log.error("Error approving lecturer", e);
+            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/lecturers";
+    }
+
+    @PostMapping("/lecturers/{id}/reject")
+    public String rejectLecturer(@PathVariable Long id,
+                                 @RequestParam(required = false, defaultValue = "") String reason,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            userService.rejectLecturer(id, reason);
+            redirectAttributes.addFlashAttribute("message", "Đã từ chối hồ sơ giảng viên");
+        } catch (Exception e) {
+            log.error("Error rejecting lecturer", e);
+            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/lecturers";
     }
 }

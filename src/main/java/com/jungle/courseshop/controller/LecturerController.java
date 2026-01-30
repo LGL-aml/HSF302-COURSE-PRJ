@@ -2,6 +2,7 @@ package com.jungle.courseshop.controller;
 
 import com.jungle.courseshop.dto.response.CourseResponse;
 import com.jungle.courseshop.service.CourseService;
+import com.jungle.courseshop.service.TopicService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +21,7 @@ import java.util.List;
 public class LecturerController {
 
     private final CourseService courseService;
+    private final TopicService topicService;
 
     @GetMapping("/courses")
     public String myCourses(Model model) {
@@ -27,9 +29,12 @@ public class LecturerController {
             List<CourseResponse> courses = courseService.getCoursesByLecturer();
             model.addAttribute("courses", courses);
             model.addAttribute("title", "Quản lý khóa học");
+            model.addAttribute("pageTitle", "Khóa học của tôi");
+            model.addAttribute("currentPage", "courses");
         } catch (Exception e) {
             log.error("Error loading lecturer courses", e);
             model.addAttribute("error", "Không thể tải danh sách khóa học");
+            model.addAttribute("currentPage", "courses");
         }
         return "lecturer/courses";
     }
@@ -37,7 +42,9 @@ public class LecturerController {
     @GetMapping("/courses/create")
     public String createCoursePage(Model model) {
         model.addAttribute("title", "Tạo khóa học mới");
-        // Logic tạo form sẽ được bổ sung
+        model.addAttribute("pageTitle", "Tạo khóa học mới");
+        model.addAttribute("currentPage", "create");
+        model.addAttribute("topics", topicService.getAll());
         return "lecturer/create-course";
     }
 
@@ -47,6 +54,9 @@ public class LecturerController {
             CourseResponse course = courseService.getCourseById(id);
             model.addAttribute("course", course);
             model.addAttribute("title", "Chỉnh sửa khóa học");
+            model.addAttribute("pageTitle", "Chỉnh sửa khóa học");
+            model.addAttribute("currentPage", "courses");
+            model.addAttribute("topics", topicService.getAll());
             return "lecturer/edit-course";
         } catch (Exception e) {
             log.error("Error loading course for edit", e);
@@ -66,4 +76,3 @@ public class LecturerController {
         return "redirect:/lecturer/courses";
     }
 }
-

@@ -1,6 +1,7 @@
 package com.jungle.courseshop.controller;
 
 import com.jungle.courseshop.dto.request.RegisterRequest;
+import com.jungle.courseshop.dto.response.LoginResponse;
 import com.jungle.courseshop.dto.response.RegisterResponse;
 import com.jungle.courseshop.service.AuthService;
 import com.jungle.courseshop.service.UserService;
@@ -41,8 +42,12 @@ public class AuthController {
             RedirectAttributes redirectAttributes
     ) {
         try {
-            authService.login(username, password);
-            return "redirect:/";
+            LoginResponse loginResponse = authService.login(username, password);
+            log.info("User {} logged in successfully with role: {}",
+                    loginResponse.getUsername(), loginResponse.getRole());
+
+            // Redirect dựa trên role của user
+            return "redirect:" + loginResponse.getRedirectUrl();
         } catch (AuthenticationException e) {
             redirectAttributes.addFlashAttribute("error", "Sai tài khoản hoặc mật khẩu");
             return "redirect:/login";
