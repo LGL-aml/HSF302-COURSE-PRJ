@@ -23,7 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class VnptKycController {
     private final VnptKycService vnptKycService;
     private final UserService userService;
-    private final UserRepo userRepo;
+//    private final UserRepo userRepo;
 
     // Bước 1: Hiển thị trang upload
     @GetMapping("/upload")
@@ -80,17 +80,13 @@ public class VnptKycController {
                 throw new IllegalArgumentException("Vui lòng điền đầy đủ thông tin bắt buộc");
             }
 
-            // Lấy user hiện tại từ Security Context
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
-            User currentUser = userRepo.findByUsernameAndEnabledTrue(username)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
-            log.info("User hiện tại: {}", username);
+
+
 
             // Gọi Service lưu xuống DB
-            userService.registerLecturer(currentUser, lecturerForm);
-            log.info("Đăng ký lecturer thành công cho user: {}", username);
+            userService.registerLecturer(lecturerForm);
+
 
             redirectAttributes.addFlashAttribute("successMessage", "Đăng ký giảng viên thành công!");
             return "redirect:/lecturer/kyc/success";

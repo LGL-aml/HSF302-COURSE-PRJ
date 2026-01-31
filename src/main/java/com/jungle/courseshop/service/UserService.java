@@ -28,14 +28,14 @@ public interface UserService {
 
     void deleteUser(Long userId);
 
-    Lecturer registerLecturer(User user, LecturerRegistrationRequest request);
+    Lecturer registerLecturer(LecturerRegistrationRequest request);
 
     void approveLecturer(Long lecturerId);
 
     void rejectLecturer(Long lecturerId, String reason);
-
+    
     List<Lecturer> getLecturers();
-
+    
     Lecturer getLecturerById(Long lecturerId);
 
 }
