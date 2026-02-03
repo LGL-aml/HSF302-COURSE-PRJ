@@ -287,7 +287,11 @@ public class UserServiceImpl implements UserService, CommandLineRunner {
 
     @Override
     public Lecturer registerLecturer(LecturerRegistrationRequest request) {
-        if (lecturerRepo.existsByUser(user)) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        User currentUser = userRepo.findByUsernameAndEnabledTrue(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        if (lecturerRepo.existsByUser(currentUser)) {
             throw new RuntimeException("Bạn đã đăng ký hoặc đang chờ duyệt rồi!");
         }
 
@@ -298,10 +302,7 @@ public class UserServiceImpl implements UserService, CommandLineRunner {
                 throw new RuntimeException("CMND/CCCD này đã được đăng ký bởi người dùng khác . Vui lòng kiểm tra lại thông tin.");
             }
         }
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        User currentUser = userRepo.findByUsernameAndEnabledTrue(username)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
 
         Lecturer lecturer = Lecturer.builder()
                 .user(currentUser)

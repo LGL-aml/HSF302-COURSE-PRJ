@@ -23,7 +23,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class VnptKycController {
     private final VnptKycService vnptKycService;
     private final UserService userService;
-//    private final UserRepo userRepo;
 
     // Bước 1: Hiển thị trang upload
     @GetMapping("/upload")
@@ -79,9 +78,6 @@ public class VnptKycController {
             if (lecturerForm.getPhone() == null || lecturerForm.getEmail() == null || lecturerForm.getBio() == null) {
                 throw new IllegalArgumentException("Vui lòng điền đầy đủ thông tin bắt buộc");
             }
-
-
-
 
 
             // Gọi Service lưu xuống DB
