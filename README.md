@@ -38,68 +38,68 @@
 
 ### 2. 👨‍🏫 Đăng Ký Làm Giảng Viên (eKYC)
 - **Đăng ký giảng viên**: Form đăng ký với thông tin cá nhân và chuyên môn
-- **Upload tài liệu**: 
-  - Chứng minh nhân dân/Căn cước công dân (CCCD)
-  - Bằng cấp, chứng chỉ liên quan
-  - Ảnh chân dung
-- **Xác thực eKYC**: 
-  - Kiểm tra tính hợp lệ của CCCD
-  - Xác thực danh tính qua AI
-  - Validation trùng lặp CCCD (mỗi CCCD chỉ đăng ký 1 lần)
-- **Duyệt hồ sơ**: 
-  - Admin xem danh sách hồ sơ chờ duyệt
-  - Xem chi tiết từng hồ sơ
-  - Approve hoặc Reject với lý do
+- **Upload tài liệu**:
+    - Chứng minh nhân dân/Căn cước công dân (CCCD)
+    - Bằng cấp, chứng chỉ liên quan
+    - Ảnh chân dung
+- **Xác thực eKYC**:
+    - Kiểm tra tính hợp lệ của CCCD
+    - Xác thực danh tính qua AI
+    - Validation trùng lặp CCCD (mỗi CCCD chỉ đăng ký 1 lần)
+- **Duyệt hồ sơ**:
+    - Admin xem danh sách hồ sơ chờ duyệt
+    - Xem chi tiết từng hồ sơ
+    - Approve hoặc Reject với lý do
 - **Thông báo kết quả**: Email tự động thông báo trạng thái duyệt
 - **Quản lý khóa học**: Giảng viên tạo và quản lý khóa học của mình
 
 ### 3. 📝 Quiz & Chứng Chỉ
-- **Hệ thống bài quiz**: 
-  - Mỗi khóa học có nhiều bài quiz theo từng module
-  - Các dạng câu hỏi: trắc nghiệm, code, điền khuyết
-  - Giới hạn thời gian làm bài
-  - Hiển thị kết quả chi tiết sau khi hoàn thành
-- **Tiến độ học tập**: 
-  - Theo dõi % hoàn thành khóa học
-  - Đánh dấu bài học đã hoàn thành
-  - Lưu lại điểm quiz
+- **Hệ thống bài quiz**:
+    - Mỗi khóa học có nhiều bài quiz theo từng module
+    - Các dạng câu hỏi: trắc nghiệm, code, điền khuyết
+    - Giới hạn thời gian làm bài
+    - Hiển thị kết quả chi tiết sau khi hoàn thành
+- **Tiến độ học tập**:
+    - Theo dõi % hoàn thành khóa học
+    - Đánh dấu bài học đã hoàn thành
+    - Lưu lại điểm quiz
 - **Chứng chỉ hoàn thành**:
-  - Điều kiện: hoàn thành 100% khóa học + đạt điểm tối thiểu quiz
-  - Chứng chỉ có mã xác thực duy nhất
-  - Tải xuống PDF chứng chỉ
-  - Email tự động gửi chứng chỉ
-  - Xác minh chứng chỉ trực tuyến
+    - Điều kiện: hoàn thành 100% khóa học + đạt điểm tối thiểu quiz
+    - Chứng chỉ có mã xác thực duy nhất
+    - Tải xuống PDF chứng chỉ
+    - Email tự động gửi chứng chỉ
+    - Xác minh chứng chỉ trực tuyến
 
 ### 4. 🤖 AI Hỗ Trợ Học Tập
 - **Chatbot AI thông minh**:
-  - Trả lời câu hỏi về nội dung khóa học
-  - Giải thích code, debug lỗi
-  - Gợi ý cách giải quyết bài tập
-  - Hỗ trợ 24/7
+    - Trả lời câu hỏi về nội dung khóa học
+    - Giải thích code, debug lỗi
+    - Gợi ý cách giải quyết bài tập
+    - Hỗ trợ 24/7
 - **Hỗ trợ quiz**:
-  - Gợi ý hướng suy nghĩ (không đưa đáp án trực tiếp)
-  - Giải thích lý thuyết liên quan
-  - Ví dụ minh họa
+    - Gợi ý hướng suy nghĩ (không đưa đáp án trực tiếp)
+    - Giải thích lý thuyết liên quan
+    - Ví dụ minh họa
 - **Học tập cá nhân hóa**:
-  - Phân tích điểm yếu của học viên
-  - Đề xuất bài học ôn tập
-  - Gợi ý khóa học phù hợp
+    - Phân tích điểm yếu của học viên
+    - Đề xuất bài học ôn tập
+    - Gợi ý khóa học phù hợp
 - **Tích hợp Cerebras AI**: Sử dụng API AI tiên tiến cho phản hồi nhanh và chính xác
 
 ### 5. 🎯 Các Tính Năng Khác
-- **Xác thực & Phân quyền**: 
-  - Đăng ký/Đăng nhập bảo mật
-  - OAuth2 (Google, Facebook)
-  - Phân quyền: User, Lecturer, Admin
+- **Xác thực & Phân quyền**:
+    - Đăng ký/Đăng nhập bảo mật
+    - OAuth2 (Google, Facebook)
+    - Phân quyền: User, Lecturer, Admin
 - **Quản trị hệ thống**:
-  - Dashboard thống kê tổng quan
-  - Quản lý người dùng, khóa học, chủ đề
-  - Quản lý giảng viên và hồ sơ eKYC
-  - Báo cáo doanh thu và hoạt động
+    - Dashboard thống kê tổng quan
+    - Quản lý người dùng, khóa học, chủ đề
+    - Quản lý giảng viên và hồ sơ eKYC
+    - Báo cáo doanh thu và hoạt động
 - **Đánh giá & Phản hồi**:
-  - Đánh giá khóa học (1-5 sao)
-  - Bình luận và thảo luận
-  - Báo cáo vấn đề
+    - Đánh giá khóa học (1-5 sao)
+    - Bình luận và thảo luận
+    - Báo cáo vấn đề
 - **Responsive Design**: Giao diện thân thiện trên mọi thiết bị
 
 ---
@@ -139,7 +139,7 @@
 
 ### Bắt Buộc
 - **Java**: JDK 21 trở lên
-- **Maven**: 3.6+ 
+- **Maven**: 3.6+
 - **MySQL**: 8.0+
 - **Git**: Để clone repository
 
@@ -295,39 +295,39 @@ spring.mail.properties.mail.smtp.starttls.enable=true
 
 #### 2. Mua Khóa Học
 1. **Browse khóa học**:
-   - Vào menu **"Khóa học"**
-   - Dùng bộ lọc: Chủ đề, Giá, Độ khó, Đánh giá
-   - Xem preview video và mô tả
+    - Vào menu **"Khóa học"**
+    - Dùng bộ lọc: Chủ đề, Giá, Độ khó, Đánh giá
+    - Xem preview video và mô tả
 
 2. **Thêm vào giỏ hàng**:
-   - Click vào khóa học muốn mua
-   - Xem chi tiết: Nội dung, giảng viên, đánh giá
-   - Click **"Thêm vào giỏ hàng"**
+    - Click vào khóa học muốn mua
+    - Xem chi tiết: Nội dung, giảng viên, đánh giá
+    - Click **"Thêm vào giỏ hàng"**
 
 3. **Thanh toán**:
-   - Click icon giỏ hàng ở header
-   - Kiểm tra danh sách khóa học
-   - Click **"Thanh toán"**
-   - Chọn phương thức: VNPay/PayPal/Stripe
-   - Hoàn tất thanh toán
-   - Nhận email xác nhận
+    - Click icon giỏ hàng ở header
+    - Kiểm tra danh sách khóa học
+    - Click **"Thanh toán"**
+    - Chọn phương thức: VNPay/PayPal/Stripe
+    - Hoàn tất thanh toán
+    - Nhận email xác nhận
 
 #### 3. Học Tập
 1. **Truy cập khóa học**:
-   - Vào **"Khóa học của tôi"**
-   - Click vào khóa học đã mua
-   - Xem danh sách bài học
+    - Vào **"Khóa học của tôi"**
+    - Click vào khóa học đã mua
+    - Xem danh sách bài học
 
 2. **Xem bài học**:
-   - Click vào bài học để xem video
-   - Đánh dấu hoàn thành sau khi xem xong
-   - Tải tài liệu đính kèm (nếu có)
+    - Click vào bài học để xem video
+    - Đánh dấu hoàn thành sau khi xem xong
+    - Tải tài liệu đính kèm (nếu có)
 
 3. **Sử dụng AI Support**:
-   - Click icon chatbot ở góc dưới phải
-   - Hỏi câu hỏi về nội dung bài học
-   - Nhờ giải thích code hoặc debug lỗi
-   - AI sẽ trả lời ngay lập tức
+    - Click icon chatbot ở góc dưới phải
+    - Hỏi câu hỏi về nội dung bài học
+    - Nhờ giải thích code hoặc debug lỗi
+    - AI sẽ trả lời ngay lập tức
 
 #### 4. Làm Quiz
 1. Sau khi hoàn thành module, click **"Làm Quiz"**
@@ -339,13 +339,13 @@ spring.mail.properties.mail.smtp.starttls.enable=true
 
 #### 5. Nhận Chứng Chỉ
 1. Điều kiện:
-   - Hoàn thành 100% bài học
-   - Đạt điểm tối thiểu ở tất cả quiz (thường ≥ 70%)
+    - Hoàn thành 100% bài học
+    - Đạt điểm tối thiểu ở tất cả quiz (thường ≥ 70%)
 2. Sau khi đủ điều kiện:
-   - Vào **"Khóa học của tôi"** → chọn khóa học
-   - Click **"Tải chứng chỉ"**
-   - Chứng chỉ PDF tự động tải về
-   - Nhận email có chứng chỉ đính kèm
+    - Vào **"Khóa học của tôi"** → chọn khóa học
+    - Click **"Tải chứng chỉ"**
+    - Chứng chỉ PDF tự động tải về
+    - Nhận email có chứng chỉ đính kèm
 3. Xác minh chứng chỉ: Dùng mã QR code trên chứng chỉ
 
 ---
@@ -356,56 +356,56 @@ spring.mail.properties.mail.smtp.starttls.enable=true
 1. **Điều kiện**: Đã có tài khoản học viên
 2. Vào **"Hồ sơ"** → Click **"Đăng ký làm giảng viên"**
 3. **Điền thông tin**:
-   - Họ tên đầy đủ
-   - Số CCCD (validation trùng lặp)
-   - Ngày sinh
-   - Chuyên môn
-   - Kinh nghiệm
-   - Mô tả bản thân
+    - Họ tên đầy đủ
+    - Số CCCD (validation trùng lặp)
+    - Ngày sinh
+    - Chuyên môn
+    - Kinh nghiệm
+    - Mô tả bản thân
 
 4. **Upload tài liệu**:
-   - **CCCD**: Mặt trước + Mặt sau (định dạng JPG/PNG, < 5MB)
-   - **Chứng chỉ**: Bằng cấp, chứng chỉ liên quan
-   - **Ảnh chân dung**: Ảnh rõ mặt để xác thực
+    - **CCCD**: Mặt trước + Mặt sau (định dạng JPG/PNG, < 5MB)
+    - **Chứng chỉ**: Bằng cấp, chứng chỉ liên quan
+    - **Ảnh chân dung**: Ảnh rõ mặt để xác thực
 
 5. **Xác thực eKYC**:
-   - Hệ thống tự động kiểm tra tính hợp lệ của CCCD
-   - Xác thực danh tính qua AI
-   - Kiểm tra trùng lặp CCCD trong database
+    - Hệ thống tự động kiểm tra tính hợp lệ của CCCD
+    - Xác thực danh tính qua AI
+    - Kiểm tra trùng lặp CCCD trong database
 
 6. **Chờ duyệt**:
-   - Hồ sơ được gửi đến Admin
-   - Theo dõi trạng thái trong **"Trạng thái KYC"**
-   - Nhận email thông báo kết quả (1-3 ngày làm việc)
+    - Hồ sơ được gửi đến Admin
+    - Theo dõi trạng thái trong **"Trạng thái KYC"**
+    - Nhận email thông báo kết quả (1-3 ngày làm việc)
 
 #### 2. Tạo Khóa Học
 1. Sau khi được duyệt, vào **"Dashboard Giảng viên"**
 2. Click **"Tạo khóa học mới"**
 3. **Thông tin cơ bản**:
-   - Tên khóa học
-   - Mô tả ngắn và chi tiết
-   - Chủ đề/Danh mục
-   - Độ khó: Beginner/Intermediate/Advanced
-   - Giá bán
-   - Ảnh thumbnail
+    - Tên khóa học
+    - Mô tả ngắn và chi tiết
+    - Chủ đề/Danh mục
+    - Độ khó: Beginner/Intermediate/Advanced
+    - Giá bán
+    - Ảnh thumbnail
 
 4. **Nội dung khóa học**:
-   - Tạo các Section (Chương)
-   - Thêm Lecture (Bài học) vào mỗi Section
-   - Upload video bài giảng (MP4, < 500MB)
-   - Thêm tài liệu (PDF, PPT, code samples)
-   - Viết mô tả cho mỗi bài
+    - Tạo các Section (Chương)
+    - Thêm Lecture (Bài học) vào mỗi Section
+    - Upload video bài giảng (MP4, < 500MB)
+    - Thêm tài liệu (PDF, PPT, code samples)
+    - Viết mô tả cho mỗi bài
 
 5. **Quiz**:
-   - Tạo quiz cho mỗi Section
-   - Thêm câu hỏi: Trắc nghiệm, Code, Tự luận
-   - Đặt đáp án đúng và giải thích
-   - Cấu hình thời gian làm bài và điểm đạt
+    - Tạo quiz cho mỗi Section
+    - Thêm câu hỏi: Trắc nghiệm, Code, Tự luận
+    - Đặt đáp án đúng và giải thích
+    - Cấu hình thời gian làm bài và điểm đạt
 
 6. **Review & Xuất bản**:
-   - Preview khóa học
-   - Kiểm tra lỗi chính tả, video
-   - Click **"Xuất bản"** khi sẵn sàng
+    - Preview khóa học
+    - Kiểm tra lỗi chính tả, video
+    - Click **"Xuất bản"** khi sẵn sàng
 
 #### 3. Quản Lý Khóa Học
 - **Dashboard**: Xem thống kê học viên, doanh thu, đánh giá
@@ -424,29 +424,29 @@ spring.mail.properties.mail.smtp.starttls.enable=true
 
 #### 2. Quản Lý Hồ Sơ Giảng Viên (eKYC)
 1. **Danh sách chờ duyệt**:
-   - Vào **"Admin"** → **"Giảng viên"** → **"Hồ sơ chờ duyệt"**
-   - Xem danh sách tất cả hồ sơ pending
-   - Thông tin hiển thị: Họ tên, Email, Ngày nộp, CCCD
+    - Vào **"Admin"** → **"Giảng viên"** → **"Hồ sơ chờ duyệt"**
+    - Xem danh sách tất cả hồ sơ pending
+    - Thông tin hiển thị: Họ tên, Email, Ngày nộp, CCCD
 
 2. **Xem chi tiết hồ sơ**:
-   - Click vào **"Xem chi tiết"** của từng hồ sơ
-   - Xem đầy đủ thông tin:
-     - Thông tin cá nhân
-     - Ảnh CCCD (mặt trước/sau)
-     - Ảnh chân dung
-     - Chứng chỉ, bằng cấp
-     - Mô tả kinh nghiệm
-   - Kiểm tra tính hợp lệ và xác thực
+    - Click vào **"Xem chi tiết"** của từng hồ sơ
+    - Xem đầy đủ thông tin:
+        - Thông tin cá nhân
+        - Ảnh CCCD (mặt trước/sau)
+        - Ảnh chân dung
+        - Chứng chỉ, bằng cấp
+        - Mô tả kinh nghiệm
+    - Kiểm tra tính hợp lệ và xác thực
 
 3. **Approve/Reject**:
-   - **Approve**: Click **"Phê duyệt"** nếu hồ sơ hợp lệ
-   - **Reject**: Click **"Từ chối"** và nhập lý do cụ thể
-   - Hệ thống tự động gửi email thông báo cho ứng viên
+    - **Approve**: Click **"Phê duyệt"** nếu hồ sơ hợp lệ
+    - **Reject**: Click **"Từ chối"** và nhập lý do cụ thể
+    - Hệ thống tự động gửi email thông báo cho ứng viên
 
 4. **Validation CCCD**:
-   - Hệ thống tự động kiểm tra CCCD trùng lặp
-   - Nếu CCCD đã được sử dụng → Từ chối tự động
-   - Admin có thể xem lịch sử sử dụng CCCD
+    - Hệ thống tự động kiểm tra CCCD trùng lặp
+    - Nếu CCCD đã được sử dụng → Từ chối tự động
+    - Admin có thể xem lịch sử sử dụng CCCD
 
 #### 3. Dashboard & Báo Cáo
 - **Tổng quan**: Thống kê user, khóa học, doanh thu
@@ -624,4 +624,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Made with ❤️ by Group 2**
 
 *Last updated: February 2026*
-
