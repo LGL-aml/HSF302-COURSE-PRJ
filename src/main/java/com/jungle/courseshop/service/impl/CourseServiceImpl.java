@@ -485,5 +485,16 @@ public class CourseServiceImpl implements CourseService {
         dto.setEnrolled(isEnrolled);
         return dto;
     }
+    
+    @Override
+    public List<CourseResponse> getAllCourses() {
+        List<Course> courses = courseRepository.findAll();
+        return courses.stream()
+                .map(course -> {
+                    List<CourseModule> modules = moduleRepository.findByCourseOrderByOrderIndexAsc(course);
+                    return mapToCourseResponse(course, modules, course.getCreator());
+                })
+                .collect(Collectors.toList());
+    }
 
 }
