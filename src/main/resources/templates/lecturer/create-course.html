@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{lecturer/layout}">
+<head>
+    <title>Tạo khóa học - Course Shop</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="lecturer-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Tạo khóa học mới</h4>
+                <a th:href="@{/lecturer/courses}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Quay lại
+                </a>
+            </div>
+
+            <form th:action="@{/lecturer/courses/create}" method="post" enctype="multipart/form-data" id="createCourseForm">
+                <!-- Basic Information -->
+                <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-info-circle me-2"></i>Thông tin cơ bản</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <label for="title" class="form-label">Tiêu đề khóa học <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="topicId" class="form-label">Chủ đề <span class="text-danger">*</span></label>
+                        <select class="form-select" id="topicId" name="topicId" required>
+                            <option value="">-- Chọn chủ đề --</option>
+                            <option th:each="topic : ${topics}" th:value="${topic.id}" th:text="${topic.name}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="price" class="form-label">Giá khóa học (VND)</label>
+                        <input type="number" class="form-control" id="price" name="price" min="0" step="1000" value="0">
+                        <small class="text-muted">Nhập 0 cho khóa học miễn phí</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="duration" class="form-label">Thời lượng (giờ) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="duration" name="duration" min="0" step="1" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="description" class="form-label">Mô tả ngắn <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="description" name="description" rows="2" required></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="content" class="form-label">Nội dung chi tiết</label>
+                    <textarea class="form-control" id="content" name="content" rows="4"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="coverImage" class="form-label">Ảnh bìa <span class="text-danger">*</span></label>
+                    <input type="file" class="form-control" id="coverImage" name="coverImage" accept="image/*" required>
+                    <small class="text-muted">Định dạng: JPG, PNG. Kích thước: 1280x720px</small>
+                </div>
+
+                <!-- Modules and Videos -->
+                <h5 class="border-bottom pb-2 mb-3 mt-4"><i class="fas fa-list me-2"></i>Module và Video</h5>
+
+                <div id="modulesContainer"></div>
+
+                <button type="button" class="btn btn-outline-primary mb-4" onclick="addModule()">
+                    <i class="fas fa-plus me-1"></i>Thêm Module
+                </button>
+
+                <input type="hidden" id="modules" name="modules">
+
+                <!-- Submit -->
+                <div class="border-top pt-3 mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Tạo khóa học
+                    </button>
+                    <a th:href="@{/lecturer/courses}" class="btn btn-secondary ms-2">
+                        <i class="fas fa-times me-1"></i>Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div layout:fragment="scripts">
+        <script>
+            let moduleIndex = 0;
+
+            function addModule() {
+                const container = document.getElementById('modulesContainer');
+                const moduleDiv = document.createElement('div');
+                moduleDiv.className = 'card mb-3 module-card';
+                moduleDiv.setAttribute('data-module-index', moduleIndex);
+
+                moduleDiv.innerHTML = `
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <strong>Module ${moduleIndex + 1}</strong>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeModule(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Tiêu đề Module <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control module-title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Thứ tự</label>
+                            <input type="number" class="form-control module-order" value="${moduleIndex}" min="0">
+                        </div>
+                        <div class="videos-container mb-2"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addVideo(this)">
+                            <i class="fas fa-plus me-1"></i>Thêm Video
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(moduleDiv);
+                moduleIndex++;
+            }
+
+            function removeModule(button) {
+                button.closest('.module-card').remove();
+            }
+
+            function addVideo(button) {
+                const videosContainer = button.parentElement.querySelector('.videos-container');
+                const videoDiv = document.createElement('div');
+                videoDiv.className = 'row mb-2 video-row';
+
+                videoDiv.innerHTML = `
+                    <div class="col-md-5">
+                        <input type="text" class="form-control video-title" placeholder="Tiêu đề video" required>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="url" class="form-control video-url" placeholder="URL video" required>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-sm btn-danger w-100" onclick="removeVideo(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+
+                videosContainer.appendChild(videoDiv);
+            }
+
+            function removeVideo(button) {
+                button.closest('.video-row').remove();
+            }
+
+            document.getElementById('createCourseForm').addEventListener('submit', function(e) {
+                const modules = [];
+                document.querySelectorAll('.module-card').forEach((moduleCard, idx) => {
+                    const module = {
+                        title: moduleCard.querySelector('.module-title').value,
+                        orderIndex: parseInt(moduleCard.querySelector('.module-order').value) || idx,
+                        videos: []
+                    };
+
+                    moduleCard.querySelectorAll('.video-row').forEach(videoRow => {
+                        module.videos.push({
+                            title: videoRow.querySelector('.video-title').value,
+                            videoUrl: videoRow.querySelector('.video-url').value
+                        });
+                    });
+
+                    modules.push(module);
+                });
+
+                document.getElementById('modules').value = JSON.stringify(modules);
+            });
+        </script>
+    </div>
+</body>
+</html>

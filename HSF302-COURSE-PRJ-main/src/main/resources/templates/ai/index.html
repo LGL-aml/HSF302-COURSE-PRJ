@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title th:text="${title}">AI Tools</title>
+</head>
+<body>
+<div layout:fragment="content" class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="mb-0">AI Tools</h2>
+        <div class="text-muted small">Yêu cầu đăng nhập</div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="admin-card p-4">
+                <h5 class="fw-bold mb-3">AI Chat</h5>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Chọn khóa học</label>
+                        <select id="courseSelect" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Chọn video</label>
+                        <select id="videoSelect" class="form-select"></select>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Chế độ</label>
+                    <select id="chatMode" class="form-select">
+                        <option value="explain">Giải thích dễ hiểu</option>
+                        <option value="summarize">Tóm tắt</option>
+                        <option value="next_step">Gợi ý bước tiếp theo</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Ngữ cảnh (tuỳ chọn)</label>
+                    <textarea id="chatContext" class="form-control" rows="4" placeholder="Dán nội dung bài học/khóa học ở đây..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Câu hỏi</label>
+                    <textarea id="chatMessage" class="form-control" rows="3" placeholder="Nhập câu hỏi..."></textarea>
+                </div>
+                <button id="chatBtn" class="btn btn-primary">Gửi</button>
+
+                <hr />
+                <div>
+                    <label class="form-label">Kết quả</label>
+                    <pre id="chatAnswer" class="p-3 bg-light rounded" style="white-space: pre-wrap;"> </pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="admin-card p-4">
+                <h5 class="fw-bold mb-3">AI Tạo Quiz</h5>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Chọn khóa học</label>
+                        <select id="courseSelect2" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Chọn video</label>
+                        <select id="videoSelect2" class="form-select"></select>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Số câu hỏi</label>
+                    <input id="quizNum" type="number" class="form-control" value="5" min="1" max="20" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nội dung bài học</label>
+                    <textarea id="quizLesson" class="form-control" rows="10" placeholder="Dán nội dung bài học ở đây..."></textarea>
+                </div>
+                <button id="quizBtn" class="btn btn-success">Tạo quiz</button>
+
+                <hr />
+                <div>
+                    <label class="form-label">Kết quả (JSON)</label>
+                    <pre id="quizOut" class="p-3 bg-light rounded" style="white-space: pre-wrap;"> </pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function getJson(url) {
+            const res = await fetch(url);
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || ('HTTP ' + res.status));
+            }
+            return res.json();
+        }
+
+        async function postJson(url, data) {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || ('HTTP ' + res.status));
+            }
+            return res.json();
+        }
+
+        function fillSelect(selectEl, items, placeholder) {
+            selectEl.innerHTML = '';
+            const opt0 = document.createElement('option');
+            opt0.value = '';
+            opt0.textContent = placeholder;
+            selectEl.appendChild(opt0);
+            for (const it of items) {
+                const opt = document.createElement('option');
+                opt.value = it.id;
+                opt.textContent = it.title;
+                selectEl.appendChild(opt);
+            }
+        }
+
+        async function loadCourses() {
+            const courses = await getJson('/api/ai/courses');
+            fillSelect(document.getElementById('courseSelect'), courses, '-- Chọn khóa học --');
+            fillSelect(document.getElementById('courseSelect2'), courses, '-- Chọn khóa học --');
+        }
+
+        async function loadVideos(courseId, videoSelectId) {
+            const sel = document.getElementById(videoSelectId);
+            if (!courseId) {
+                fillSelect(sel, [], '-- Chọn video --');
+                return;
+            }
+            const videos = await getJson('/api/ai/courses/' + courseId + '/videos');
+            fillSelect(sel, videos, '-- Chọn video --');
+        }
+
+        document.getElementById('courseSelect').addEventListener('change', (e) => {
+            loadVideos(e.target.value, 'videoSelect');
+        });
+        document.getElementById('courseSelect2').addEventListener('change', (e) => {
+            loadVideos(e.target.value, 'videoSelect2');
+        });
+
+        // init
+        loadCourses().then(() => {
+            fillSelect(document.getElementById('videoSelect'), [], '-- Chọn video --');
+            fillSelect(document.getElementById('videoSelect2'), [], '-- Chọn video --');
+        });
+
+        document.getElementById('chatBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('chatBtn');
+            btn.disabled = true;
+            document.getElementById('chatAnswer').textContent = 'Đang xử lý...';
+            try {
+                const payload = {
+                    mode: document.getElementById('chatMode').value,
+                    courseId: document.getElementById('courseSelect').value ? parseInt(document.getElementById('courseSelect').value, 10) : null,
+                    videoId: document.getElementById('videoSelect').value ? parseInt(document.getElementById('videoSelect').value, 10) : null,
+                    context: document.getElementById('chatContext').value,
+                    message: document.getElementById('chatMessage').value,
+                };
+                const data = await postJson('/api/ai/chat', payload);
+                document.getElementById('chatAnswer').textContent = data.answer || '';
+            } catch (e) {
+                document.getElementById('chatAnswer').textContent = 'Lỗi: ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('quizBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('quizBtn');
+            btn.disabled = true;
+            document.getElementById('quizOut').textContent = 'Đang xử lý...';
+            try {
+                const payload = {
+                    courseId: document.getElementById('courseSelect2').value ? parseInt(document.getElementById('courseSelect2').value, 10) : null,
+                    videoId: document.getElementById('videoSelect2').value ? parseInt(document.getElementById('videoSelect2').value, 10) : null,
+                    numQuestions: parseInt(document.getElementById('quizNum').value || '5', 10),
+                    lessonText: document.getElementById('quizLesson').value,
+                };
+                const data = await postJson('/api/ai/quiz/generate', payload);
+                document.getElementById('quizOut').textContent = JSON.stringify(data, null, 2);
+            } catch (e) {
+                document.getElementById('quizOut').textContent = 'Lỗi: ' + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+<head>
+    <title th:text="${title}">Quản lý hồ sơ giảng viên</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <!-- Page Header -->
+        <div class="page-header slide-in">
+            <h2 class="page-title">
+                <i class="fas fa-chalkboard-teacher"></i> Quản lý hồ sơ giảng viên
+            </h2>
+            <div class="d-flex gap-2">
+                <button class="btn btn-admin btn-admin-secondary" onclick="filterStatus('ALL')">
+                    <i class="fas fa-list me-1"></i> Tất cả
+                </button>
+                <button class="btn btn-admin btn-admin-warning" onclick="filterStatus('PENDING')">
+                    <i class="fas fa-clock me-1"></i> Chờ duyệt
+                </button>
+                <button class="btn btn-admin btn-admin-success" onclick="filterStatus('APPROVED')">
+                    <i class="fas fa-check me-1"></i> Đã duyệt
+                </button>
+                <button class="btn btn-admin btn-admin-danger" onclick="filterStatus('REJECTED')">
+                    <i class="fas fa-times me-1"></i> Từ chối
+                </button>
+            </div>
+        </div>
+
+        <div class="admin-card p-4 slide-in">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">Danh sách hồ sơ đăng ký</h5>
+                <div class="input-group" style="max-width: 300px;">
+                    <input type="text" class="form-control" placeholder="Tìm kiếm..." id="searchInput">
+                    <button class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table admin-table text-nowrap align-middle">
+                    <thead>
+                        <tr>
+                            <th>#ID</th>
+                            <th>Thông tin giảng viên</th>
+                            <th>Lĩnh vực chuyên môn</th>
+                            <th>CMND/CCCD</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="lecturer : ${lecturers}" th:data-status="${lecturer.status}">
+                            <td class="text-muted fw-bold" th:text="'#' + ${lecturer.id}">1</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img th:src="${lecturer.user.avatar} ?: '/images/default-avatar.png'"
+                                         class="rounded-circle me-3"
+                                         width="45" height="45" alt="Avatar"
+                                         style="object-fit: cover;">
+                                    <div>
+                                        <div class="fw-bold" th:text="${lecturer.user.fullname}">Full Name</div>
+                                        <div class="text-muted small" th:text="${'@' + lecturer.user.username}">username</div>
+                                        <div class="text-muted small">
+                                            <i class="fas fa-envelope me-1"></i>
+                                            <span th:text="${lecturer.user.email}"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info bg-opacity-10 text-info px-3 py-2"
+                                      th:text="${lecturer.domainExpertise}">Domain</span>
+                            </td>
+                            <td>
+                                <span class="text-muted" th:text="${lecturer.identityNumber}">123456789</span>
+                            </td>
+                            <td>
+                                <span class="text-muted small"
+                                      th:text="${#temporals.format(lecturer.registeredAt, 'dd/MM/yyyy HH:mm')}">
+                                    01/01/2024
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill px-3 py-2"
+                                      th:classappend="${lecturer.status.name() == 'PENDING' ? 'bg-warning bg-opacity-10 text-warning' :
+                                                       (lecturer.status.name() == 'APPROVED' ? 'bg-success bg-opacity-10 text-success' :
+                                                       (lecturer.status.name() == 'REJECTED' ? 'bg-danger bg-opacity-10 text-danger' :
+                                                       'bg-secondary bg-opacity-10 text-secondary'))}"
+                                      th:text="${lecturer.status.name() == 'PENDING' ? 'Chờ duyệt' :
+                                               (lecturer.status.name() == 'APPROVED' ? 'Đã duyệt' :
+                                               (lecturer.status.name() == 'REJECTED' ? 'Từ chối' :
+                                               lecturer.status.name()))}">
+                                    PENDING
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a th:href="@{/admin/lecturers/{id}(id=${lecturer.id})}"
+                                       class="btn btn-sm btn-outline-info"
+                                       title="Xem chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form th:if="${lecturer.status.name() == 'PENDING'}"
+                                          th:action="@{/admin/lecturers/{id}/approve(id=${lecturer.id})}"
+                                          method="post"
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn phê duyệt hồ sơ này?');"
+                                          style="display: inline;">
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-success"
+                                                title="Phê duyệt">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                    <button th:if="${lecturer.status.name() == 'PENDING'}"
+                                            type="button"
+                                            class="btn btn-sm btn-outline-danger"
+                                            title="Từ chối"
+                                            data-bs-toggle="modal"
+                                            th:data-bs-target="'#rejectModal' + ${lecturer.id}">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(lecturers)}">
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block opacity-50"></i>
+                                <p class="mb-0">Chưa có hồ sơ nào</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Reject Modal for each lecturer -->
+        <div th:each="lecturer : ${lecturers}"
+             th:if="${lecturer.status.name() == 'PENDING'}"
+             class="modal fade"
+             th:id="'rejectModal' + ${lecturer.id}"
+             tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Từ chối hồ sơ</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form th:action="@{/admin/lecturers/{id}/reject(id=${lecturer.id})}" method="post">
+                        <div class="modal-body">
+                            <p>Bạn có chắc chắn muốn từ chối hồ sơ của <strong th:text="${lecturer.user.fullname}"></strong>?</p>
+                            <div class="mb-3">
+                                <label for="reason" class="form-label">Lý do từ chối (tùy chọn):</label>
+                                <textarea class="form-control"
+                                          name="reason"
+                                          rows="3"
+                                          placeholder="Nhập lý do từ chối..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-danger">Xác nhận từ chối</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script layout:fragment="scripts">
+        function filterStatus(status) {
+            const rows = document.querySelectorAll('tbody tr[data-status]');
+            rows.forEach(row => {
+                if (status === 'ALL' || row.getAttribute('data-status') === status) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // Search functionality
+        document.getElementById('searchInput')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr[data-status]');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

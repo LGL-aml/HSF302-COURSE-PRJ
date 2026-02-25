@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title th:text="${course.title} + ' - Học tập'">Học tập - Course Shop</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a th:href="@{/}"><i class="fas fa-home me-1"></i>Trang chủ</a></li>
+            <li class="breadcrumb-item"><a th:href="@{/courses/me}"><i class="fas fa-book me-1"></i>Khóa học của tôi</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page" th:text="${course.title}">Khóa học</li>
+        </ol>
+    </nav>
+
+    <!-- Course Title -->
+    <div class="mb-4">
+        <h2 class="fw-bold" th:text="${course.title}">Tên khóa học</h2>
+        <p class="text-muted mb-0">
+            <i class="fas fa-user-tie me-2"></i>
+            <span th:text="${course.creator}">Giảng viên</span>
+        </p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column - Video Player -->
+        <div class="col-lg-8">
+            <!-- Video Player Card -->
+            <div class="video-info-card mb-4">
+                <div class="video-container" id="videoContainer">
+                    <iframe id="videoPlayer"
+                            th:src="${selectedVideo != null ? selectedVideo.videoUrl : ''}"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                    </iframe>
+                </div>
+            </div>
+
+            <!-- Video Info Card -->
+            <div class="video-info-card p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="flex-grow-1">
+                        <h4 class="mb-2 fw-bold" id="currentVideoTitle"
+                            th:text="${selectedVideo != null ? selectedVideo.title : 'Chọn video để xem'}">
+                            Video Title
+                        </h4>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-user-tie text-primary me-2"></i>
+                            <span th:text="${course.creator}">Giảng viên</span>
+                        </p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-primary me-2">
+                            <i class="fas fa-book me-1"></i>
+                            <span th:text="${course.modules.size()} + ' modules'">0 modules</span>
+                        </span>
+                        <span class="badge bg-success">
+                            <i class="fas fa-video me-1"></i>
+                            <span th:text="${totalVideos} + ' videos'">0 videos</span>
+                        </span>
+                    </div>
+                    <form id="markWatchedForm"
+                          th:action="@{/courses/videos/{videoId}/mark-watched(videoId=${selectedVideo != null ? selectedVideo.id : 0})}"
+                          method="post"
+                          style="display: inline;"
+                          th:if="${selectedVideo != null}">
+                        <input type="hidden" name="courseId" th:value="${course.id}">
+                        <input type="hidden" id="videoIdInput" name="videoId"
+                               th:value="${selectedVideo.id}">
+                        <input type="hidden" name="watched" value="true">
+                        <button type="submit" class="mark-watched-btn">
+                            <i class="fas fa-check-circle me-2"></i>Đánh dấu đã xem
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Course Modules & Videos -->
+        <div class="col-lg-4">
+            <div class="course-sidebar">
+                <!-- Progress Section -->
+                <div class="progress-section">
+                    <h6 class="mb-3 fw-bold">
+                        <i class="fas fa-chart-line me-2"></i>Tiến độ khóa học
+                    </h6>
+                    <div class="progress mb-3">
+                        <div class="progress-bar"
+                             role="progressbar"
+                             th:style="'width: ' + ${progressPercent} + '%'"
+                             th:aria-valuenow="${progressPercent}">
+                            <span th:text="${#numbers.formatDecimal(progressPercent, 0, 0)} + '%'">0%</span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small>
+                            <i class="fas fa-check-circle me-1"></i>
+                            <span th:text="${watchedVideos}">0</span> đã xem
+                        </small>
+                        <small>
+                            <i class="fas fa-video me-1"></i>
+                            <span th:text="${totalVideos}">0</span> tổng cộng
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Course Content -->
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <i class="fas fa-list-ul me-2"></i>Nội dung khóa học
+                    </div>
+                    <div class="accordion accordion-flush" id="moduleAccordion">
+                        <div class="accordion-item" th:each="module, iterStat : ${course.modules}">
+                            <h2 class="accordion-header" th:id="'heading' + ${iterStat.index}">
+                                <button class="accordion-button module-header"
+                                        th:classappend="${iterStat.index != 0} ? 'collapsed' : ''"
+                                        type="button"
+                                        data-bs-toggle="collapse"
+                                        th:data-bs-target="'#collapse' + ${iterStat.index}"
+                                        th:aria-expanded="${iterStat.index == 0}"
+                                        th:aria-controls="'collapse' + ${iterStat.index}">
+                                    <div class="w-100 d-flex justify-content-between align-items-center me-3">
+                                        <span>
+                                            <i class="fas fa-folder-open me-2"></i>
+                                            <strong th:text="${module.title}">Module Title</strong>
+                                        </span>
+                                        <span class="module-count">
+                                            <i class="fas fa-video me-1"></i>
+                                            <span th:text="${module.videos.size()}">0</span>
+                                        </span>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div th:id="'collapse' + ${iterStat.index}"
+                                 class="accordion-collapse collapse"
+                                 th:classappend="${iterStat.index == 0} ? 'show' : ''"
+                                 th:aria-labelledby="'heading' + ${iterStat.index}"
+                                 data-bs-parent="#moduleAccordion">
+                                <div class="accordion-body p-0">
+                                    <div th:if="${!module.videos.isEmpty()}">
+                                        <div class="video-list-item"
+                                             th:each="video, vIterStat : ${module.videos}"
+                                             th:classappend="${video.watched} ? 'watched' : ''"
+                                             th:attr="data-video-id=${video.id},
+                                                     data-video-url=${video.videoUrl},
+                                                     data-video-title=${video.title},
+                                                     data-watched=${video.watched}"
+                                             onclick="playVideo(this)">
+                                            <i class="video-icon"
+                                               th:class="${video.watched} ? 'fas fa-check-circle' : 'fas fa-play-circle'"></i>
+                                            <span class="flex-grow-1" th:text="${vIterStat.index + 1} + '. ' + ${video.title}">Video Title
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div th:if="${module.videos.isEmpty()}"
+                                         class="p-4 text-muted text-center">
+                                        <i class="fas fa-info-circle me-2"></i>Chưa có video
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script layout:fragment="scripts" th:inline="javascript">
+    let currentVideoId = null;
+
+    function playVideo(element) {
+        console.log('playVideo called', element);
+
+        // Remove active class from all videos
+        document.querySelectorAll('.video-list-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Add active class to clicked video
+        element.classList.add('active');
+
+        // Get video data
+        const videoId = element.getAttribute('data-video-id');
+        const videoUrl = element.getAttribute('data-video-url');
+        const videoTitle = element.getAttribute('data-video-title');
+
+        console.log('Video data:', { videoId, videoUrl, videoTitle });
+
+        currentVideoId = videoId;
+
+        // Update video player
+        const videoPlayer = document.getElementById('videoPlayer');
+        videoPlayer.src = videoUrl;
+        console.log('Updated video player src to:', videoUrl);
+
+        document.getElementById('currentVideoTitle').textContent = videoTitle;
+
+        // Update form action and hidden input
+        const courseId = [[${course.id}]];
+        const markWatchedForm = document.getElementById('markWatchedForm');
+        if (markWatchedForm) {
+            markWatchedForm.action = `/courses/videos/${videoId}/mark-watched`;
+            const videoIdInput = document.getElementById('videoIdInput');
+            if (videoIdInput) {
+                videoIdInput.value = videoId;
+            }
+        }
+
+        // Update URL without page reload
+        const newUrl = `/courses/learn/${courseId}?videoId=${videoId}`;
+        window.history.pushState({path: newUrl}, '', newUrl);
+
+        console.log('Video switched successfully');
+    }
+
+    // Set first video or selected video as active on load
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded');
+
+        const selectedVideoId = [[${selectedVideo != null ? selectedVideo.id : null}]];
+        console.log('Selected video ID:', selectedVideoId);
+
+        if (selectedVideoId) {
+            const videoElement = document.querySelector(`[data-video-id="${selectedVideoId}"]`);
+            if (videoElement) {
+                videoElement.classList.add('active');
+                currentVideoId = selectedVideoId;
+                console.log('Set active video:', selectedVideoId);
+            }
+        } else {
+            const firstVideo = document.querySelector('.video-list-item');
+            if (firstVideo) {
+                firstVideo.classList.add('active');
+                currentVideoId = firstVideo.getAttribute('data-video-id');
+                console.log('Set first video as active:', currentVideoId);
+
+                // Update form for first video
+                if (currentVideoId) {
+                    const markWatchedForm = document.getElementById('markWatchedForm');
+                    if (markWatchedForm) {
+                        const videoIdInput = document.getElementById('videoIdInput');
+                        if (videoIdInput) {
+                            videoIdInput.value = currentVideoId;
+                        }
+                        markWatchedForm.action = `/courses/videos/${currentVideoId}/mark-watched`;
+                    }
+                }
+            }
+        }
+
+        // Test: log all video items
+        const allVideos = document.querySelectorAll('.video-list-item');
+        console.log('Total video items found:', allVideos.length);
+        allVideos.forEach((video, index) => {
+            console.log(`Video ${index}:`, {
+                id: video.getAttribute('data-video-id'),
+                title: video.getAttribute('data-video-title'),
+                url: video.getAttribute('data-video-url')
+            });
+        });
+    });
+</script>
+</body>
+</html>

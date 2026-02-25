@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout}">
+
+<head>
+    <title>Quản lý khóa học</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-book me-2"></i>Quản lý khóa học</h2>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-light">
+                <i class="fas fa-download me-2"></i>Xuất Excel
+            </button>
+            <a th:href="@{/admin/courses/create}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Thêm khóa học
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="admin-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Tổng khóa học</h6>
+                        <h3 class="mb-0" th:text="${totalCourses}">0</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="fas fa-book fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="admin-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Đang hoạt động</h6>
+                        <h3 class="mb-0" th:text="${activeCourses}">0</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="admin-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Đang chờ duyệt</h6>
+                        <h3 class="mb-0" th:text="${pendingCourses}">0</h3>
+                    </div>
+                    <div class="text-warning">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="admin-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="text-muted mb-2">Tổng học viên</h6>
+                        <h3 class="mb-0" th:text="${totalStudents}">0</h3>
+                    </div>
+                    <div class="text-info">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="admin-card mb-4">
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">Tìm kiếm</label>
+                <input type="text" class="form-control" placeholder="Nhập tên khóa học...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Chủ đề</label>
+                <select class="form-select">
+                    <option>Tất cả chủ đề</option>
+                    <option>Lập trình</option>
+                    <option>Thiết kế</option>
+                    <option>Kinh doanh</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select">
+                    <option>Tất cả trạng thái</option>
+                    <option>Đang hoạt động</option>
+                    <option>Đang chờ duyệt</option>
+                    <option>Đã khóa</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Tìm kiếm
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Courses Table -->
+    <div class="admin-card">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover">
+                <thead>
+                    <tr>
+                        <th>Khóa học</th>
+                        <th>Giảng viên</th>
+                        <th>Chủ đề</th>
+                        <th>Giá</th>
+                        <th>Học viên</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="course : ${courses}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <div th:if="${course.coverImage}" style="width: 50px; height: 50px; background: var(--accent-color); border-radius: 8px; overflow: hidden;">
+                                        <img th:src="${course.coverImage}" alt="Course cover" style="width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
+                                    <div th:unless="${course.coverImage}" style="width: 50px; height: 50px; background: var(--accent-color); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-book text-white"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold" th:text="${course.title}">Course Title</div>
+                                    <small class="text-muted" th:text="${#strings.abbreviate(course.description, 50)}">Course description</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td th:text="${course.creator}">Creator Name</td>
+                        <td><span class="badge bg-info" th:text="${course.topicName}">Topic</span></td>
+                        <td th:text="${#numbers.formatDecimal(course.price, 0, 'COMMA', 0, 'POINT')} + 'đ'">Price</td>
+                        <td th:text="${course.enrollmentCount != null ? course.enrollmentCount : 0}">0</td>
+                        <td><span class="badge bg-success">Đang hoạt động</span></td>
+                        <td th:text="${#temporals.format(course.createdAt, 'dd/MM/yyyy')}">Date</td>
+                        <td>
+                            <a th:href="@{/courses/{id}(id=${course.id})}" target="_blank" class="btn btn-sm btn-outline-light me-1" title="Xem khóa học">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a th:href="@{/lecturer/courses/{id}/edit(id=${course.id})}" class="btn btn-sm btn-outline-warning me-1" title="Chỉnh sửa">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger" title="Khóa">
+                                <i class="fas fa-lock"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(courses)}">
+                        <td colspan="8" class="text-center text-muted py-5">
+                            <i class="fas fa-inbox fa-3x mb-3 d-block opacity-50"></i>
+                            <p class="mb-0">Chưa có khóa học nào</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">Previous</a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+</body>
+</html>

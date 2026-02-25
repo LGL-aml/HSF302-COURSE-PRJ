@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Chọn học viên để chat</title>
+</head>
+<body>
+<section layout:fragment="content" class="container py-4">
+    <h3 class="mb-3">Chọn học viên để chat</h3>
+
+    <div class="mb-2">
+        Course: <strong th:text="${course.title}"></strong>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div th:if="${#lists.isEmpty(students)}" class="text-muted">
+                Chưa có học viên đăng ký.
+            </div>
+
+            <div class="list-group" th:if="${!#lists.isEmpty(students)}">
+                <a class="list-group-item list-group-item-action"
+                   th:each="s : ${students}"
+                   th:href="@{/chat/room(courseId=${course.id}, studentId=${s.id})}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div><strong th:text="${s.fullname != null ? s.fullname : s.username}"></strong></div>
+                            <div class="small text-muted" th:text="${s.email}"></div>
+                        </div>
+                        <div class="btn btn-sm btn-outline-primary">Chat</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>

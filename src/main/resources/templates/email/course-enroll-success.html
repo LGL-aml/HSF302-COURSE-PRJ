@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng ký khóa học thành công</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .email-header {
+            background-color: #007BFF;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .email-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .email-body {
+            padding: 30px;
+            color: #333333;
+        }
+        .email-body h3 {
+            color: #007BFF;
+        }
+        .course-info {
+            background-color: #f1f7ff;
+            padding: 15px;
+            border-left: 4px solid #007BFF;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .course-info li {
+            margin-bottom: 6px;
+        }
+        .email-footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #777777;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <div class="email-header">
+        <h2>🎉 Đăng ký khóa học thành công!</h2>
+    </div>
+    <div class="email-body">
+        <p>Xin chào <strong th:text="${userName}">bạn</strong>,</p>
+        <p>Chúc mừng bạn đã đăng ký thành công khóa học <strong th:text="${courseTitle}">Tên khóa học</strong> trên nền tảng CODELEARN.</p>
+
+        <div class="course-info">
+            <h3>📘 Thông tin khóa học:</h3>
+            <ul>
+                <li><strong>Thời lượng:</strong> <span th:text="${duration}">--</span></li>
+                <li><strong>Giảng viên:</strong> <span th:text="${instructor}">--</span></li>
+                <li><strong>Ngày đăng ký:</strong> <span th:text="${enrollDate}">--</span></li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 25px;">Hãy bắt đầu hành trình học tập của bạn ngay hôm nay!</p>
+        <p>Chúc bạn học tập hiệu quả và thành công.</p>
+    </div>
+    <div class="email-footer">
+        © 2025 CODELEARN. Mọi quyền được bảo lưu.
+    </div>
+</div>
+</body>
+</html>
