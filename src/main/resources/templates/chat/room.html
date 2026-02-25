@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Chat</title>
+</head>
+<body>
+<section layout:fragment="content" class="container py-4">
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <h3 class="mb-3">Chat</h3>
+
+            <div class="card">
+                <div class="card-body" style="height: 420px; overflow-y: auto;" id="chatBox"></div>
+                <div class="card-footer">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="messageInput" placeholder="Nhập tin nhắn...">
+                        <button class="btn btn-primary" id="sendBtn">Gửi</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="small text-muted mt-2">
+                <div>Course: <span th:text="${course.title}"></span></div>
+                <div>Chat với: <span th:text="${recipient.fullname != null ? recipient.fullname : recipient.username}"></span></div>
+            </div>
+
+            <input type="hidden" id="recipientId" th:value="${recipient.id}">
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <script>
+        (function () {
+            const recipientId = document.getElementById('recipientId').value;
+            const chatBox = document.getElementById('chatBox');
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+
+            function appendMessage(msg) {
+                const div = document.createElement('div');
+                div.className = 'mb-2';
+                const sender = msg.senderName ? msg.senderName : ('User #' + msg.senderId);
+                const time = msg.sentAt ? msg.sentAt : '';
+                div.innerHTML = '<strong>' + escapeHtml(sender) + '</strong> <span class="text-muted small">' + escapeHtml(time) + '</span><div>' + escapeHtml(msg.content) + '</div>';
+                chatBox.appendChild(div);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            function escapeHtml(unsafe) {
+                return String(unsafe)
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            }
+
+            const socket = new SockJS('/ws');
+            const stompClient = Stomp.over(socket);
+            stompClient.debug = null;
+
+            stompClient.connect({}, function () {
+                stompClient.subscribe('/user/queue/messages', function (frame) {
+                    try {
+                        const msg = JSON.parse(frame.body);
+                        appendMessage(msg);
+                    } catch (e) {
+                    }
+                });
+
+                sendBtn.addEventListener('click', send);
+                input.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') send();
+                });
+            });
+
+            function send() {
+                const content = input.value.trim();
+                if (!content) return;
+
+                stompClient.send('/app/chat.send', {}, JSON.stringify({
+                    recipientId: Number(recipientId),
+                    content: content
+                }));
+                input.value = '';
+            }
+        })();
+    </script>
+</section>
+</body>
+</html>

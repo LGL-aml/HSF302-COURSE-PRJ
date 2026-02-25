@@ -33,7 +33,8 @@ public class SecurityConfig {
             "/images/**",
             "/static/**",
             "/lecturer/kyc/**",
-            "/payments/vn-pay-callback"
+            "/payments/vn-pay-callback",
+            "/ws/**"
     };
 
     @Bean

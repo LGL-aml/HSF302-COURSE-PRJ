@@ -2,9 +2,14 @@ package com.jungle.courseshop.controller;
 
 import com.jungle.courseshop.dto.request.TopicRequest;
 import com.jungle.courseshop.dto.request.UpdateUserRequest;
+import com.jungle.courseshop.dto.response.CourseResponse;
 import com.jungle.courseshop.dto.response.TopicResponse;
 import com.jungle.courseshop.dto.response.UserDetailResponse;
+import com.jungle.courseshop.entity.Lecturer;
+import com.jungle.courseshop.entity .Order;
 import com.jungle.courseshop.entity.Role;
+import com.jungle.courseshop.repository.OrderRepo;
+import com.jungle.courseshop.service.CourseService;
 import com.jungle.courseshop.service.impl.AdminStatsService;
 import com.jungle.courseshop.service.impl.TopicServiceImpl;
 import com.jungle.courseshop.service.impl.UserServiceImpl;
@@ -16,7 +21,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -29,18 +34,38 @@ public class AdminController {
     private final UserServiceImpl userService;
     private final TopicServiceImpl topicService;
     private final AdminStatsService adminStatsService;
+    private final CourseService courseService;
+    private final OrderRepo orderRepo;
 
-    @GetMapping("/dashboard")
+    @GetMapping({"", "/dashboard"})
     public String dashboard(@RequestParam(value = "period", required = false, defaultValue = "month") String period,
+                            @RequestParam(value = "startDate", required = false) String startDateStr,
+                            @RequestParam(value = "endDate", required = false) String endDateStr,
                             Model model) {
         try {
             List<UserDetailResponse> users = userService.getAllUsers();
             model.addAttribute("recentUsers", users.stream().limit(5).toList());
             model.addAttribute("title", "Admin Dashboard");
 
-            var stats = adminStatsService.getDashboardStats(period);
+            // Parse custom dates if provided
+            LocalDate startDate = null;
+            LocalDate endDate = null;
+            
+            if ("custom".equals(period) && startDateStr != null && endDateStr != null) {
+                try {
+                    startDate = LocalDate.parse(startDateStr);
+                    endDate = LocalDate.parse(endDateStr);
+                } catch (Exception e) {
+                    log.warn("Invalid date format, using default period", e);
+                    period = "month"; // Fallback to default
+                }
+            }
+            
+            var stats = adminStatsService.getDashboardStats(period, startDate, endDate);
             model.addAttribute("stats", stats);
             model.addAttribute("period", period);
+            model.addAttribute("startDate", startDateStr);
+            model.addAttribute("endDate", endDateStr);
 
             // Backward-compatible attributes used by existing template cards
             model.addAttribute("totalUsers", stats.getTotalUsers());
@@ -183,5 +208,159 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
         }
         return "redirect:/admin/topics";
+    }
+
+    // --- Lecturer Management ---
+
+    @GetMapping("/lecturers")
+    public String lecturersList(Model model) {
+        try {
+            List<Lecturer> lecturers = userService.getLecturers();
+            model.addAttribute("lecturers", lecturers);
+            model.addAttribute("title", "Quản lý hồ sơ giảng viên");
+        } catch (Exception e) {
+            log.error("Error loading lecturers", e);
+            model.addAttribute("error", "Không thể tải danh sách hồ sơ giảng viên");
+        }
+        return "admin/lecturers/list";
+    }
+
+    @GetMapping("/lecturers/{id}")
+    public String lecturerDetail(@PathVariable Long id, Model model) {
+        try {
+            Lecturer lecturer = userService.getLecturerById(id);
+            model.addAttribute("lecturer", lecturer);
+            model.addAttribute("title", "Chi tiết hồ sơ giảng viên");
+        } catch (Exception e) {
+            log.error("Error loading lecturer detail", e);
+            return "redirect:/admin/lecturers";
+        }
+        return "admin/lecturers/detail";
+    }
+
+    @PostMapping("/lecturers/{id}/approve")
+    public String approveLecturer(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            userService.approveLecturer(id);
+            redirectAttributes.addFlashAttribute("message", "Đã phê duyệt hồ sơ giảng viên thành công");
+        } catch (Exception e) {
+            log.error("Error approving lecturer", e);
+            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/lecturers";
+    }
+
+    @PostMapping("/lecturers/{id}/reject")
+    public String rejectLecturer(@PathVariable Long id,
+                                 @RequestParam(required = false, defaultValue = "") String reason,
+                                 RedirectAttributes redirectAttributes) {
+        try {
+            userService.rejectLecturer(id, reason);
+            redirectAttributes.addFlashAttribute("message", "Đã từ chối hồ sơ giảng viên");
+        } catch (Exception e) {
+            log.error("Error rejecting lecturer", e);
+            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/admin/lecturers";
+    }
+
+    // --- Orders Management ---
+
+    @GetMapping("/orders")
+    public String ordersList(Model model) {
+        try {
+            List<Order> orders = orderRepo.findAll();
+            
+            // Calculate statistics
+            long totalOrders = orders.size();
+            long completedOrders = orders.stream()
+                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("COMPLETED"))
+                    .count();
+            long pendingOrders = orders.stream()
+                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("PENDING"))
+                    .count();
+            long processingOrders = orders.stream()
+                    .filter(o -> o.getStatus() != null && o.getStatus().name().equals("PROCESSING"))
+                    .count();
+            
+            model.addAttribute("orders", orders);
+            model.addAttribute("totalOrders", totalOrders);
+            model.addAttribute("completedOrders", completedOrders);
+            model.addAttribute("pendingOrders", pendingOrders);
+            model.addAttribute("processingOrders", processingOrders);
+            model.addAttribute("title", "Quản lý đơn hàng");
+        } catch (Exception e) {
+            log.error("Error loading orders", e);
+            model.addAttribute("error", "Không thể tải danh sách đơn hàng");
+        }
+        return "admin/orders/list";
+    }
+
+    // --- Reports Management ---
+
+    @GetMapping("/reports")
+    public String reportsList(@RequestParam(value = "period", required = false, defaultValue = "month") String period,
+                               @RequestParam(value = "startDate", required = false) String startDateStr,
+                               @RequestParam(value = "endDate", required = false) String endDateStr,
+                               Model model) {
+        try {
+            // Parse custom dates if provided
+            LocalDate startDate = null;
+            LocalDate endDate = null;
+            
+            if ("custom".equals(period) && startDateStr != null && endDateStr != null) {
+                try {
+                    startDate = LocalDate.parse(startDateStr);
+                    endDate = LocalDate.parse(endDateStr);
+                } catch (Exception e) {
+                    log.warn("Invalid date format in reports, using default period", e);
+                    period = "month"; // Fallback to default
+                }
+            }
+            
+            var stats = adminStatsService.getDashboardStats(period, startDate, endDate);
+            model.addAttribute("stats", stats);
+            model.addAttribute("period", period);
+            model.addAttribute("startDate", startDateStr);
+            model.addAttribute("endDate", endDateStr);
+            model.addAttribute("title", "Quản lý báo cáo");
+        } catch (Exception e) {
+            log.error("Error loading reports", e);
+            model.addAttribute("error", "Không thể tải danh sách báo cáo");
+        }
+        return "admin/reports/list";
+    }
+
+    // --- Courses Management ---
+
+    @GetMapping("/courses")
+    public String coursesList(Model model) {
+        try {
+            List<CourseResponse> courses = courseService.getAllCourses();
+            
+            // Calculate statistics
+            long totalCourses = courses.size();
+            long activeCourses = courses.size(); // All courses from getAllCourses
+            long pendingCourses = 0;
+            long totalStudents = courses.stream()
+                    .mapToLong(c -> c.getEnrollmentCount() != null ? c.getEnrollmentCount() : 0)
+                    .sum();
+            
+            model.addAttribute("courses", courses);
+            model.addAttribute("totalCourses", totalCourses);
+            model.addAttribute("activeCourses", activeCourses);
+            model.addAttribute("pendingCourses", pendingCourses);
+            model.addAttribute("totalStudents", totalStudents);
+            model.addAttribute("title", "Quản lý khóa học");
+        } catch (Exception e) {
+            log.error("Error loading courses", e);
+            model.addAttribute("error", "Không thể tải danh sách khóa học");
+        }
+        return "admin/courses/list";
+    }
+
+    @GetMapping("/settings")
+    public String settings() {
+        return "redirect:/admin/dashboard";
     }
 }

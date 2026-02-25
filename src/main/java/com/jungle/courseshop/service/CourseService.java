@@ -32,5 +32,7 @@ public interface CourseService {
     List<CourseResponse> getCoursesByLecturer();
 
     void deleteCourse(Long courseId);
+    
+    List<CourseResponse> getAllCourses();
 }
 

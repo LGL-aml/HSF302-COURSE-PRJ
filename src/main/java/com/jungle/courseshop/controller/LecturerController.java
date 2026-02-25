@@ -23,6 +23,11 @@ public class LecturerController {
     private final CourseService courseService;
     private final TopicService topicService;
 
+    @GetMapping({"", "/"})
+    public String lecturerHome() {
+        return "redirect:/lecturer/courses";
+    }
+
     @GetMapping("/courses")
     public String myCourses(Model model) {
         try {
@@ -73,6 +78,26 @@ public class LecturerController {
             log.error("Error deleting course", e);
             redirectAttributes.addFlashAttribute("error", "Không thể xóa khóa học");
         }
+        return "redirect:/lecturer/courses";
+    }
+
+    @GetMapping("/students")
+    public String students() {
+        return "redirect:/lecturer/courses";
+    }
+
+    @GetMapping("/reviews")
+    public String reviews() {
+        return "redirect:/lecturer/courses";
+    }
+
+    @GetMapping("/earnings")
+    public String earnings() {
+        return "redirect:/lecturer/courses";
+    }
+
+    @GetMapping("/settings")
+    public String settings() {
         return "redirect:/lecturer/courses";
     }
 }

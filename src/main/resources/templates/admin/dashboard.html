@@ -82,26 +82,129 @@
             <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-4">
                 <h5 class="fw-bold mb-0"><i class="fas fa-chart-area me-2"></i>Thống kê doanh thu</h5>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
-                    <form method="get" th:action="@{/admin/dashboard}" class="d-flex gap-2 align-items-center">
-                        <select class="form-select-admin" name="period" style="min-width: 180px;">
+                    <form method="get" th:action="@{/admin/dashboard}" class="d-flex flex-wrap gap-2 align-items-center" id="statsFilterForm">
+                        <select class="form-select-admin" name="period" id="periodSelect" style="min-width: 180px;" onchange="toggleCustomDateInputs()">
                             <option value="month" th:selected="${period == 'month'}">30 ngày gần nhất</option>
                             <option value="year" th:selected="${period == 'year'}">12 tháng gần nhất</option>
+                            <option value="quarter" th:selected="${period == 'quarter'}">So sánh theo quý</option>
+                            <option value="custom" th:selected="${period == 'custom'}">Tùy chỉnh khoảng thời gian</option>
                         </select>
-                        <button class="btn btn-admin btn-admin-primary" type="submit">Lọc</button>
+                        
+                        <!-- Custom date range inputs -->
+                        <div id="customDateInputs" style="display: none;" class="d-flex gap-2">
+                            <input type="date" name="startDate" id="startDate" class="form-control form-control-sm" 
+                                   th:value="${startDate}" style="max-width: 150px;">
+                            <span class="align-self-center">đến</span>
+                            <input type="date" name="endDate" id="endDate" class="form-control form-control-sm" 
+                                   th:value="${endDate}" style="max-width: 150px;">
+                        </div>
+                        
+                        <button class="btn btn-admin btn-admin-primary" type="submit">
+                            <i class="fas fa-filter me-1"></i>Lọc
+                        </button>
                     </form>
-                    <a class="btn btn-admin btn-admin-outline" th:href="@{/admin/stats/export.xlsx(period=${period})}">
+                    <a class="btn btn-admin btn-admin-outline" th:href="@{/admin/stats/export.xlsx(period=${period},startDate=${startDate},endDate=${endDate})}">
                         <i class="fas fa-file-excel me-1"></i>Excel
                     </a>
-                    <a class="btn btn-admin btn-admin-outline" th:href="@{/admin/stats/export.pdf(period=${period})}">
+                    <a class="btn btn-admin btn-admin-outline" th:href="@{/admin/stats/export.pdf(period=${period},startDate=${startDate},endDate=${endDate})}">
                         <i class="fas fa-file-pdf me-1"></i>PDF
                     </a>
                 </div>
             </div>
 
+            <!-- Quarterly Comparison Table (shown when period is quarter) -->
+            <div th:if="${period == 'quarter' and stats?.quarterlyComparisons != null and !stats.quarterlyComparisons.empty}" class="mb-4">
+                <div class="alert alert-info">
+                    <i class="fas fa-chart-bar me-2"></i><strong>So sánh theo quý</strong> - Hiển thị dữ liệu 4 quý gần nhất
+                </div>
+                <div class="table-responsive">
+                    <table class="table admin-table">
+                        <thead>
+                            <tr>
+                                <th>Quý</th>
+                                <th>Doanh thu</th>
+                                <th>Số đơn hàng</th>
+                                <th>Chênh lệch với quý trước</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="q, iterStat : ${stats.quarterlyComparisons}">
+                                <td>
+                                    <strong th:text="${q.quarter}">Q1 2026</strong>
+                                </td>
+                                <td>
+                                    <span class="text-success fw-bold" th:text="${#numbers.formatDecimal(q.revenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                                </td>
+                                <td>
+                                    <span class="badge-admin badge-admin-info" th:text="${q.orders}">0</span>
+                                </td>
+                                <td th:if="${iterStat.index > 0}">
+                                    <th:block th:with="prevRevenue=${stats.quarterlyComparisons[iterStat.index - 1].revenue}">
+                                        <th:block th:if="${q.revenue.compareTo(prevRevenue) > 0}">
+                                            <span class="text-success">
+                                                <i class="fas fa-arrow-up"></i>
+                                                <span th:text="${#numbers.formatDecimal((q.revenue.subtract(prevRevenue)).divide(prevRevenue, 4, T(java.math.RoundingMode).HALF_UP).multiply(new java.math.BigDecimal('100')), 1, 'COMMA', 2, 'POINT')} + '%'">0%</span>
+                                            </span>
+                                        </th:block>
+                                        <th:block th:if="${q.revenue.compareTo(prevRevenue) < 0}">
+                                            <span class="text-danger">
+                                                <i class="fas fa-arrow-down"></i>
+                                                <span th:text="${#numbers.formatDecimal((prevRevenue.subtract(q.revenue)).divide(prevRevenue, 4, T(java.math.RoundingMode).HALF_UP).multiply(new java.math.BigDecimal('100')), 1, 'COMMA', 2, 'POINT')} + '%'">0%</span>
+                                            </span>
+                                        </th:block>
+                                        <th:block th:if="${q.revenue.compareTo(prevRevenue) == 0}">
+                                            <span class="text-muted">
+                                                <i class="fas fa-minus"></i> 0%
+                                            </span>
+                                        </th:block>
+                                    </th:block>
+                                </td>
+                                <td th:if="${iterStat.index == 0}">
+                                    <span class="text-muted">-</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Quarterly Bar Chart Comparison -->
+                <div class="mt-4">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-chart-bar me-2"></i>Biểu đồ so sánh theo quý</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="quarterlyRevenueChart" height="200"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="quarterlyOrdersChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- No data message for quarterly -->
+            <div th:if="${period == 'quarter' and (stats?.quarterlyComparisons == null or stats.quarterlyComparisons.empty)}" class="mb-4">
+                <div class="alert alert-warning text-center">
+                    <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
+                    <h5>Không có dữ liệu theo quý</h5>
+                    <p class="mb-0">Không tìm thấy dữ liệu đơn hàng trong 4 quý gần nhất. Vui lòng thử lại sau hoặc chọn khoảng thời gian khác.</p>
+                </div>
+            </div>
+
             <div class="row g-4">
                 <div class="col-lg-8">
-                    <div class="chart-container">
-                        <canvas id="revenueChart" height="120"></canvas>
+                    <!-- No data message for chart -->
+                    <div th:if="${stats == null or stats.labels == null or stats.labels.empty}" class="admin-card">
+                        <div class="alert alert-warning text-center" style="min-height: 300px; display: flex; flex-direction: column; justify-content: center;">
+                            <i class="fas fa-chart-line fa-3x mb-3 opacity-50"></i>
+                            <h5>Không có dữ liệu biểu đồ</h5>
+                            <p class="mb-0">Không tìm thấy dữ liệu trong khoảng thời gian đã chọn.<br>Vui lòng thử lại với khoảng thời gian khác.</p>
+                        </div>
+                    </div>
+                    
+                    <div th:if="${stats != null and stats.labels != null and !stats.labels.empty}" class="admin-card">
+                        <div class="chart-container">
+                            <canvas id="revenueChart" height="120"></canvas>
+                        </div>
                     </div>
                 </div>
                 <div class="col-lg-4">
@@ -109,10 +212,22 @@
                         <div class="mb-4">
                             <p class="text-muted mb-1">Tổng đơn đã thanh toán</p>
                             <h3 class="fw-bold" th:text="${stats?.totalPaidOrders} ?: 0">0</h3>
+                            <small th:if="${stats?.totalPaidOrders == 0}" class="text-warning">
+                                <i class="fas fa-info-circle"></i> Chưa có đơn hàng nào
+                            </small>
                         </div>
-                        <div>
+                        <div class="mb-4">
                             <p class="text-muted mb-1">Tổng doanh thu</p>
                             <h3 class="fw-bold text-success" th:text="${#numbers.formatDecimal(stats?.totalRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
+                            <small th:if="${stats?.totalRevenue == null or stats.totalRevenue.compareTo(T(java.math.BigDecimal).ZERO) == 0}" class="text-warning">
+                                <i class="fas fa-info-circle"></i> Chưa có doanh thu
+                            </small>
+                        </div>
+                        <div th:if="${period == 'custom'}">
+                            <p class="text-muted mb-1 small">Khoảng thời gian</p>
+                            <p class="fw-semibold small" th:text="${#temporals.format(stats?.startDate, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(stats?.endDate, 'dd/MM/yyyy')}">
+                                Custom range
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -241,26 +356,60 @@
 
     <div layout:fragment="scripts">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script>
+            // Toggle custom date inputs based on selected period
+            function toggleCustomDateInputs() {
+                const periodSelect = document.getElementById('periodSelect');
+                const customDateInputs = document.getElementById('customDateInputs');
+                const startDate = document.getElementById('startDate');
+                const endDate = document.getElementById('endDate');
+                
+                if (periodSelect.value === 'custom') {
+                    customDateInputs.style.display = 'flex';
+                    startDate.required = true;
+                    endDate.required = true;
+                    
+                    // Set default values if empty
+                    if (!startDate.value) {
+                        const today = new Date();
+                        const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+                        startDate.value = monthAgo.toISOString().split('T')[0];
+                        endDate.value = today.toISOString().split('T')[0];
+                    }
+                } else {
+                    customDateInputs.style.display = 'none';
+                    startDate.required = false;
+                    endDate.required = false;
+                }
+            }
+            
+            // Initialize on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                toggleCustomDateInputs();
+            });
+        </script>
         <script th:inline="javascript">
-            const labels = /*[[${stats?.labels}]]*/ [];
-            const revenueData = /*[[${stats?.revenueSeries}]]*/ [];
-            const ordersData = /*[[${stats?.paidOrdersSeries}]]*/ [];
+            // Wait for Chart.js to load
+            document.addEventListener('DOMContentLoaded', function() {
+                const labels = /*[[${stats?.labels}]]*/ [];
+                const revenueData = /*[[${stats?.revenueSeries}]]*/ [];
+                const ordersData = /*[[${stats?.paidOrdersSeries}]]*/ [];
 
-            if (document.getElementById('revenueChart')) {
-                const ctx = document.getElementById('revenueChart');
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Doanh thu',
-                                data: revenueData,
-                                borderColor: 'rgba(108, 92, 231, 1)',
-                                backgroundColor: 'rgba(108, 92, 231, 0.1)',
-                                tension: 0.4,
-                                fill: true,
-                                yAxisID: 'y'
+                if (document.getElementById('revenueChart') && labels && labels.length > 0) {
+                    const ctx = document.getElementById('revenueChart');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Doanh thu',
+                                    data: revenueData,
+                                    borderColor: 'rgba(108, 92, 231, 1)',
+                                    backgroundColor: 'rgba(108, 92, 231, 0.1)',
+                                    tension: 0.4,
+                                    fill: true,
+                                    yAxisID: 'y'
                             },
                             {
                                 label: 'Đơn đã thanh toán',
@@ -303,8 +452,138 @@
                         }
                     }
                 });
-            }
+                }
+                
+                // Quarterly Comparison Bar Charts
+                const quarterlyData = /*[[${stats?.quarterlyComparisons}]]*/ [];
+                
+                if (quarterlyData && quarterlyData.length > 0) {
+                    // Extract data for charts
+                    const quarterLabels = quarterlyData.map(q => q.quarter);
+                    const quarterRevenues = quarterlyData.map(q => q.revenue);
+                    const quarterOrders = quarterlyData.map(q => q.orders);
+                    
+                    // Revenue Bar Chart
+                    if (document.getElementById('quarterlyRevenueChart')) {
+                        const revenueCtx = document.getElementById('quarterlyRevenueChart');
+                        new Chart(revenueCtx, {
+                            type: 'bar',
+                        data: {
+                            labels: quarterLabels,
+                            datasets: [{
+                                label: 'Doanh thu (đ)',
+                                data: quarterRevenues,
+                                backgroundColor: [
+                                    'rgba(108, 92, 231, 0.8)',
+                                    'rgba(16, 185, 129, 0.8)',
+                                    'rgba(245, 158, 11, 0.8)',
+                                    'rgba(239, 68, 68, 0.8)'
+                                ],
+                                borderColor: [
+                                    'rgba(108, 92, 231, 1)',
+                                    'rgba(16, 185, 129, 1)',
+                                    'rgba(245, 158, 11, 1)',
+                                    'rgba(239, 68, 68, 1)'
+                                ],
+                                borderWidth: 2,
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    labels: { color: '#a0a0a0' }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'So sánh doanh thu theo quý',
+                                    color: '#ffffff',
+                                    font: { size: 14, weight: 'bold' }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: { color: '#a0a0a0' },
+                                    grid: { color: 'rgba(255,255,255,0.05)' }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { 
+                                        color: '#a0a0a0',
+                                        callback: function(value) {
+                                            return value.toLocaleString('vi-VN') + ' đ';
+                                        }
+                                    },
+                                    grid: { color: 'rgba(255,255,255,0.05)' }
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Orders Bar Chart
+                if (document.getElementById('quarterlyOrdersChart')) {
+                    const ordersCtx = document.getElementById('quarterlyOrdersChart');
+                    new Chart(ordersCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: quarterLabels,
+                            datasets: [{
+                                label: 'Số đơn hàng',
+                                data: quarterOrders,
+                                backgroundColor: [
+                                    'rgba(16, 185, 129, 0.8)',
+                                    'rgba(108, 92, 231, 0.8)',
+                                    'rgba(245, 158, 11, 0.8)',
+                                    'rgba(239, 68, 68, 0.8)'
+                                ],
+                                borderColor: [
+                                    'rgba(16, 185, 129, 1)',
+                                    'rgba(108, 92, 231, 1)',
+                                    'rgba(245, 158, 11, 1)',
+                                    'rgba(239, 68, 68, 1)'
+                                ],
+                                borderWidth: 2,
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    labels: { color: '#a0a0a0' }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'So sánh số đơn hàng theo quý',
+                                    color: '#ffffff',
+                                    font: { size: 14, weight: 'bold' }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: { color: '#a0a0a0' },
+                                    grid: { color: 'rgba(255,255,255,0.05)' }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { 
+                                        color: '#a0a0a0',
+                                        stepSize: 1
+                                    },
+                                    grid: { color: 'rgba(255,255,255,0.05)' }
+                                }
+                            }
+                        }
+                    });
+                    }
+                }
+            });
         </script>
     </div>
 </body>
-</html>
