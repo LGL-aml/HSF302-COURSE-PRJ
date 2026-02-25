@@ -268,11 +268,16 @@
             <div class="step-line"></div>
             <div class="step">
                 <div class="step-number">2</div>
-                <span class="step-text">Xác nhận thông tin</span>
+                <span class="step-text">Xác thực khuôn mặt</span>
             </div>
             <div class="step-line"></div>
             <div class="step">
                 <div class="step-number">3</div>
+                <span class="step-text">Xác nhận thông tin</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step">
+                <div class="step-number">4</div>
                 <span class="step-text">Hoàn tất</span>
             </div>
         </div>
@@ -295,7 +300,7 @@
 
         <!-- Upload Form -->
         <div class="upload-card">
-            <form th:action="@{/lecturer/kyc/extract}" method="post" enctype="multipart/form-data" id="kycForm">
+            <form th:action="@{/lecturer/kyc/upload-cccd}" method="post" enctype="multipart/form-data" id="kycForm">
                 <div class="row g-4">
                     <!-- Front Image -->
                     <div class="col-md-6">
@@ -462,4 +467,3 @@
 </th:block>
 </body>
 </html>
-

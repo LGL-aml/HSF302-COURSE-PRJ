@@ -3,11 +3,9 @@ package com.jungle.courseshop.service.impl;
 import com.jungle.courseshop.dto.PostCodeDTO;
 import com.jungle.courseshop.dto.VnptOcrDTO;
 import com.jungle.courseshop.dto.request.VnptClassifyRequest;
+import com.jungle.courseshop.dto.request.VnptFaceCompareRequest;
 import com.jungle.courseshop.dto.request.VnptOcrFullRequest;
-import com.jungle.courseshop.dto.response.UserCardResponse;
-import com.jungle.courseshop.dto.response.VnptClassifyResponse;
-import com.jungle.courseshop.dto.response.VnptOcrFullResponse;
-import com.jungle.courseshop.dto.response.VnptUploadResponse;
+import com.jungle.courseshop.dto.response.*;
 import com.jungle.courseshop.entity.User;
 import com.jungle.courseshop.repository.UserRepo;
 import com.jungle.courseshop.service.CloudinaryService;
@@ -88,6 +86,40 @@ public class VnptKycServiceImpl implements VnptKycService {
         return mapDataToUser(data);
     }
 
+    @Override
+    public UserCardResponse extractIdCardInfoFromHashes(String frontHash, String backHash) {
+        String initialClientSession = "user" + "_" + System.currentTimeMillis();
+        String safeClientSession = initialClientSession.replaceAll("[^a-zA-Z0-9]", "");
+        String transactionToken = UUID.randomUUID().toString().replace("-", "");
+
+        Integer idType = callClassifyApi(frontHash, safeClientSession, transactionToken);
+        log.info("API Phân loại trả về type: {}", idType);
+        validateDocumentType(idType);
+
+        VnptOcrFullRequest requestBody = new VnptOcrFullRequest();
+        requestBody.setImgFront(frontHash);
+        requestBody.setImgBack(backHash);
+        requestBody.setClientSession(safeClientSession);
+        requestBody.setType(idType);
+        requestBody.setCropParam("");
+        requestBody.setValidatePostcode(true);
+        requestBody.setToken(transactionToken);
+
+        VnptOcrFullResponse response = callFullOcrApi(requestBody);
+
+        if (response == null || response.getObject() == null) {
+            log.error("API VNPT trả về rỗng hoặc không có 'object'");
+            throw new IllegalArgumentException("Không bóc tách được dữ liệu (object is null)");
+        }
+        VnptOcrDTO data = response.getObject();
+        data.setIssuePlace(data.getIssuePlace().replace("/n", " "));
+        return mapDataToUser(data);
+    }
+
+    @Override
+    public String uploadFileToVnpt(MultipartFile file) {
+        return uploadFile(file);
+    }
 
 //    private List<CardImgDTO> generateCardImageDTOs(MultipartFile frontImage,
 //                                                   MultipartFile backImage) {
@@ -246,6 +278,52 @@ public class VnptKycServiceImpl implements VnptKycService {
         } catch (IOException e) {
             log.error("Lỗi khi upload CV lên Cloudinary: {}", e.getMessage(), e);
             throw new Exception("Lỗi khi upload CV: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public VnptFaceCompareResponse compareFace(MultipartFile portraitImage, String frontCardHash) {
+        // 1. Khởi tạo session và token
+        String safeClientSession = ("user_" + System.currentTimeMillis()).replaceAll("[^a-zA-Z0-9]", "");
+        String transactionToken = UUID.randomUUID().toString().replace("-", "");
+
+        // 2. Upload ảnh chân dung lên VNPT để lấy hash (Sử dụng hàm uploadFile có sẵn của bạn)
+        log.info("Đang upload ảnh chân dung selfie...");
+        String portraitHash = uploadFile(portraitImage);
+
+        // 3. Tạo body request
+        VnptFaceCompareRequest requestBody = VnptFaceCompareRequest.builder()
+                .img_front(frontCardHash)
+                .img_face(portraitHash)
+                .client_session(safeClientSession)
+                .token(transactionToken)
+                .build();
+
+        // 4. Gọi API VNPT Face Compare
+        log.info("Đang gọi API xác thực khuôn mặt (/ai/v1/face/compare)...");
+        try {
+            VnptFaceCompareResponse response = vnptWebClient.post()
+                    .uri("/ai/v1/face/compare")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("mac-address", "TEST1") // Thay bằng MAC thực tế nếu cần
+                    .body(BodyInserters.fromValue(requestBody))
+                    .retrieve()
+                    .bodyToMono(VnptFaceCompareResponse.class)
+                    .block();
+
+            if (response == null || response.getObject() == null) {
+                throw new IllegalArgumentException("Không thể so khớp khuôn mặt (Response rỗng)");
+            }
+
+            log.info("Kết quả so khớp: {} - Độ tin cậy: {}%",
+                    response.getObject().getMsg(),
+                    response.getObject().getProb());
+
+            return response;
+
+        } catch (WebClientResponseException e) {
+            log.error("LỖI API VNPT (Face Compare): {}", e.getResponseBodyAsString());
+            throw new IllegalArgumentException("Lỗi xác thực khuôn mặt: " + e.getResponseBodyAsString());
         }
     }
 

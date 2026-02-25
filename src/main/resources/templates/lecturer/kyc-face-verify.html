@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Xác thực khuôn mặt - Đăng ký Giảng viên</title>
+    <style>
+        .kyc-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .kyc-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .kyc-header h1 {
+            color: #4f46e5;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .kyc-header p {
+            color: #64748b;
+        }
+
+        .steps-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 0.75rem;
+        }
+
+        .step.active .step-number {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .step-text {
+            font-weight: 500;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .step.active .step-text {
+            color: #4f46e5;
+        }
+
+        .step.completed .step-text {
+            color: #10b981;
+        }
+
+        .step-line {
+            width: 40px;
+            height: 2px;
+            background: #e2e8f0;
+        }
+
+        .step-line.completed {
+            background: #10b981;
+        }
+
+        .upload-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 2rem;
+        }
+
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #f8fafc;
+            min-height: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .upload-zone:hover {
+            border-color: #4f46e5;
+            background: #f1f5f9;
+        }
+
+        .upload-zone.dragover {
+            border-color: #4f46e5;
+            background: #eef2ff;
+        }
+
+        .upload-zone.has-image {
+            border-style: solid;
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .upload-zone i {
+            font-size: 3rem;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        .upload-zone.has-image i {
+            color: #10b981;
+        }
+
+        .upload-zone h5 {
+            color: #334155;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-zone p {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 240px;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border: none;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-submit:disabled {
+            background: #94a3b8;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+
+        .btn-back {
+            background: #f1f5f9;
+            color: #475569;
+            border: none;
+            padding: 0.875rem 2rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box i {
+            color: #3b82f6;
+        }
+
+        .info-box p {
+            margin: 0;
+            color: #1e40af;
+            font-size: 0.875rem;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .warning-box p {
+            margin: 0;
+            color: #92400e;
+            font-size: 0.875rem;
+        }
+
+        .face-guide {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .guide-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0;
+        }
+
+        .guide-item i {
+            width: 30px;
+            color: #4f46e5;
+            font-size: 1.1rem;
+        }
+
+        .guide-item.success i {
+            color: #10b981;
+        }
+
+        .guide-item.danger i {
+            color: #ef4444;
+        }
+
+        .guide-item span {
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        .remove-image {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-zone.has-image .remove-image {
+            display: flex;
+        }
+
+        .remove-image:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 2rem 3rem;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="kyc-container">
+        <!-- Header -->
+        <div class="kyc-header">
+            <h1><i class="fas fa-user-shield me-2"></i>Xác thực sinh trắc học</h1>
+            <p>Chụp ảnh chân dung để xác minh danh tính với ảnh trên CCCD</p>
+        </div>
+
+        <!-- Steps -->
+        <div class="steps-container">
+            <div class="step completed">
+                <div class="step-number"><i class="fas fa-check"></i></div>
+                <span class="step-text">Tải ảnh CCCD</span>
+            </div>
+            <div class="step-line completed"></div>
+            <div class="step active">
+                <div class="step-number">2</div>
+                <span class="step-text">Xác thực khuôn mặt</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <span class="step-text">Xác nhận thông tin</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <span class="step-text">Hoàn tất</span>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-custom mb-4" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <!-- Info Box -->
+        <div class="info-box">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-info-circle me-2 mt-1"></i>
+                <div>
+                    <p><strong>Xác thực sinh trắc học:</strong> Hệ thống sẽ so khớp ảnh chân dung của bạn với ảnh trên CCCD đã upload. Đảm bảo khuôn mặt rõ ràng, đủ ánh sáng và nhìn thẳng vào camera.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Guide -->
+            <div class="col-lg-5">
+                <div class="face-guide">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-lightbulb text-warning me-2"></i>Hướng dẫn chụp ảnh</h5>
+
+                    <div class="guide-item success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Nhìn thẳng vào camera</span>
+                    </div>
+                    <div class="guide-item success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Khuôn mặt nằm giữa khung hình</span>
+                    </div>
+                    <div class="guide-item success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Ánh sáng đều, đủ sáng</span>
+                    </div>
+                    <div class="guide-item success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Nền phía sau đơn giản</span>
+                    </div>
+
+                    <hr class="my-2">
+
+                    <div class="guide-item danger">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Không đeo kính râm</span>
+                    </div>
+                    <div class="guide-item danger">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Không đeo khẩu trang</span>
+                    </div>
+                    <div class="guide-item danger">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Không chụp nghiêng hoặc quay mặt</span>
+                    </div>
+                    <div class="guide-item danger">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Không chụp trong bóng tối</span>
+                    </div>
+                </div>
+
+                <!-- Warning -->
+                <div class="warning-box">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-exclamation-triangle me-2 mt-1" style="color: #f59e0b;"></i>
+                        <p><strong>Lưu ý:</strong> Ảnh chân dung phải là ảnh thật của bạn, khớp với khuôn mặt trên CCCD. Độ chính xác tối thiểu yêu cầu: <strong>80%</strong>.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Zone -->
+            <div class="col-lg-7">
+                <div class="upload-card">
+                    <h5 class="fw-bold mb-3 text-center">
+                        <i class="fas fa-camera text-primary me-2"></i>Tải lên ảnh chân dung
+                    </h5>
+
+                    <form th:action="@{/lecturer/kyc/verify-face}" method="post" enctype="multipart/form-data" id="faceForm">
+                        <div class="upload-zone" id="portraitZone" onclick="document.getElementById('portraitImage').click()">
+                            <button type="button" class="remove-image" onclick="event.stopPropagation(); removePortrait()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <div class="upload-placeholder" id="portraitPlaceholder">
+                                <i class="fas fa-user-circle"></i>
+                                <h5>Chụp / Tải lên ảnh chân dung</h5>
+                                <p>Kéo thả hoặc click để chọn ảnh</p>
+                                <p class="text-muted small mt-2">PNG, JPG tối đa 5MB</p>
+                            </div>
+                            <img id="portraitPreview" class="preview-image" style="display: none;">
+                        </div>
+                        <input type="file" id="portraitImage" name="portraitImage" accept="image/*"
+                               class="d-none" required onchange="previewPortrait(this)">
+
+                        <div class="d-flex justify-content-between mt-4 gap-3">
+                            <a th:href="@{/lecturer/kyc/upload}" class="btn btn-back flex-grow-1">
+                                <i class="fas fa-arrow-left me-2"></i>Quay lại
+                            </a>
+                            <button type="submit" class="btn btn-primary btn-submit flex-grow-1" id="submitBtn" disabled>
+                                <i class="fas fa-face-smile me-2"></i>Xác thực khuôn mặt
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Note -->
+        <div class="text-center mt-4">
+            <p class="text-muted small">
+                <i class="fas fa-shield-alt me-1"></i>
+                Ảnh chân dung chỉ được sử dụng để xác thực sinh trắc học và không được lưu trữ sau khi xác thực hoàn tất
+            </p>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h5>Đang xác thực khuôn mặt...</h5>
+            <p class="text-muted mb-0">Hệ thống đang so khớp sinh trắc học, vui lòng đợi</p>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script>
+        let portraitUploaded = false;
+
+        function previewPortrait(input) {
+            const file = input.files[0];
+            if (file) {
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Kích thước file không được vượt quá 5MB');
+                    input.value = '';
+                    return;
+                }
+
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Vui lòng chọn file ảnh (PNG, JPG, JPEG)');
+                    input.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('portraitPreview');
+                    const placeholder = document.getElementById('portraitPlaceholder');
+                    const zone = document.getElementById('portraitZone');
+
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    zone.classList.add('has-image');
+                    portraitUploaded = true;
+
+                    document.getElementById('submitBtn').disabled = false;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function removePortrait() {
+            const input = document.getElementById('portraitImage');
+            const preview = document.getElementById('portraitPreview');
+            const placeholder = document.getElementById('portraitPlaceholder');
+            const zone = document.getElementById('portraitZone');
+
+            input.value = '';
+            preview.style.display = 'none';
+            preview.src = '';
+            placeholder.style.display = 'block';
+            zone.classList.remove('has-image');
+            portraitUploaded = false;
+
+            document.getElementById('submitBtn').disabled = true;
+        }
+
+        // Drag and drop
+        const portraitZone = document.getElementById('portraitZone');
+
+        portraitZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+
+        portraitZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+
+        portraitZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const input = document.getElementById('portraitImage');
+                input.files = files;
+                previewPortrait(input);
+            }
+        });
+
+        // Show loading on form submit
+        document.getElementById('faceForm').addEventListener('submit', function() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        });
+    </script>
+</th:block>
+</body>
+</html>
+
