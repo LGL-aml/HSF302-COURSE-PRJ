@@ -3,13 +3,17 @@
 ## 📋 Mục Lục
 - [Giới Thiệu](#giới-thiệu)
 - [Tính Năng Chính](#tính-năng-chính)
+  - [AI RAG System](#4-🤖-ai-rag-retrieval-augmented-generation-hỗ-trợ-học-tập)
 - [Công Nghệ Sử Dụng](#công-nghệ-sử-dụng)
 - [Yêu Cầu Hệ Thống](#yêu-cầu-hệ-thống)
 - [Hướng Dẫn Cài Đặt](#hướng-dẫn-cài-đặt)
 - [Cấu Hình](#cấu-hình)
+  - [RAG System](#rag-system-ai-chat-widget)
 - [Hướng Dẫn Sử Dụng](#hướng-dẫn-sử-dụng)
+  - [Sử Dụng RAG Chat Widget](#3-sử-dụng-ai-rag-chat-widget)
 - [Cấu Trúc Dự Án](#cấu-trúc-dự-án)
 - [API Endpoints](#api-endpoints)
+  - [RAG AI Chat](#rag-ai-chat-widget)
 
 ---
 
@@ -70,21 +74,66 @@
     - Email tự động gửi chứng chỉ
     - Xác minh chứng chỉ trực tuyến
 
-### 4. 🤖 AI Hỗ Trợ Học Tập
-- **Chatbot AI thông minh**:
-    - Trả lời câu hỏi về nội dung khóa học
-    - Giải thích code, debug lỗi
-    - Gợi ý cách giải quyết bài tập
-    - Hỗ trợ 24/7
-- **Hỗ trợ quiz**:
-    - Gợi ý hướng suy nghĩ (không đưa đáp án trực tiếp)
-    - Giải thích lý thuyết liên quan
-    - Ví dụ minh họa
-- **Học tập cá nhân hóa**:
-    - Phân tích điểm yếu của học viên
-    - Đề xuất bài học ôn tập
-    - Gợi ý khóa học phù hợp
-- **Tích hợp Cerebras AI**: Sử dụng API AI tiên tiến cho phản hồi nhanh và chính xác
+### 4. 🤖 AI RAG (Retrieval-Augmented Generation) Hỗ Trợ Học Tập
+
+Hệ thống AI thông minh sử dụng công nghệ RAG kết hợp semantic search và rule-based intent classification để hỗ trợ học viên 24/7.
+
+#### 🎯 Tính Năng RAG Chat Widget
+- **Chat Widget Tương Tác**:
+    - Giao diện chat đẹp mắt ở góc dưới phải màn hình (480x680px)
+    - Gradient purple theme với hiệu ứng smooth
+    - Responsive trên mọi thiết bị
+    - Scroll tự động đến tin nhắn mới
+
+- **Tìm Kiếm & Gợi Ý Khóa Học Thông Minh**:
+    - Tìm khóa học theo tên, chủ đề, ngôn ngữ lập trình
+    - Lọc theo giá: "Tìm khóa học dưới 200k", "Khóa học từ 100k đến 500k"
+    - Gợi ý khóa học phù hợp dựa trên nhu cầu
+    - Hiển thị kết quả dạng **HTML Course Cards** tương tác:
+        - Hình ảnh khóa học với badge chủ đề
+        - Tên khóa học, giảng viên, số học viên
+        - **Giá tiền** định dạng VNĐ rõ ràng
+        - Nút **"Chi tiết"** và **"Mua ngay"** trực tiếp trong chat
+
+- **Intent Classification Thông Minh** (7 loại):
+    - `COURSE_SEARCH`: Tìm kiếm khóa học theo keyword
+    - `COURSE_RECOMMEND`: Gợi ý khóa học phù hợp
+    - `PRICING_INFO`: Thông tin giá và lọc theo giá
+    - `ENROLLMENT_INFO`: Hướng dẫn đăng ký và thanh toán
+    - `PLATFORM_INFO`: Thông tin về nền tảng và giảng viên
+    - `GENERAL_CHAT`: Chào hỏi và giới thiệu tính năng
+    - Hệ thống tự động phân loại ý định người dùng để đưa ra câu trả lời chính xác
+
+- **Semantic Search Vector Store**:
+    - Sử dụng Transformers Embedding Model (all-MiniLM-L6-v2)
+    - Vector dimension: 384
+    - SimpleVectorStore lưu trữ in-memory cho tốc độ cao
+    - Tìm kiếm ngữ nghĩa thông minh, không chỉ khớp từ khóa
+
+- **Lọc Giá Thông Minh**:
+    - Tự động trích xuất khoảng giá từ câu hỏi:
+        - "dưới 200k" → maxPrice = 200,000 VNĐ
+        - "trên 500k" → minPrice = 500,000 VNĐ
+        - "từ 100k đến 500k" → minPrice & maxPrice
+    - Lọc chính xác khóa học theo budget người dùng
+
+- **Quản Lý Session**:
+    - Mỗi người dùng có sessionId riêng
+    - Lưu lịch sử chat để theo dõi hội thoại
+    - Tự động lấy userId từ SecurityContext
+
+- **Phản Hồi Cấu Trúc HTML**:
+    - Course cards với hover effects đẹp mắt
+    - Promo boxes, info boxes với icon và màu sắc
+    - Numbered steps cho hướng dẫn từng bước
+    - Support footer với hotline và email
+
+#### 🔧 Công Nghệ RAG Stack
+- **Spring AI 1.1.2**: Framework RAG chính
+- **Transformers Embedding**: all-MiniLM-L6-v2 (384 dim)
+- **SimpleVectorStore**: In-memory vector storage
+- **Rule-based Intent Classifier**: Keyword matching không cần LLM API
+- **MySQL Integration**: Truy vấn course data real-time
 
 ### 5. 🎯 Các Tính Năng Khác
 - **Xác thực & Phân quyền**:
@@ -123,9 +172,16 @@
 ### Third-party Services
 - **Cloudinary**: Lưu trữ hình ảnh và video
 - **Payment Gateway**: VNPay/PayPal/Stripe
-- **Cerebras AI**: AI chatbot hỗ trợ học tập
 - **Email Service**: SMTP (Gmail/SendGrid)
 - **eKYC Service**: Xác thực danh tính
+
+### AI & RAG Stack
+- **Spring AI 1.1.2**: RAG framework và orchestration
+- **Transformers Embedding Model**: all-MiniLM-L6-v2 (Hugging Face)
+- **Vector Store**: SimpleVectorStore (in-memory)
+- **Intent Classifier**: Rule-based keyword matching
+- **Response Generator**: Template-based với HTML formatting
+- **Session Management**: Backend-managed chat sessions
 
 ### Tools & Libraries
 - **Maven**: Dependency management
@@ -191,7 +247,6 @@ spring.datasource.password=your_password
 3. Tạo file `.env` trong thư mục gốc và thêm các API keys:
 
 ```properties
-CEREBRAS_API_KEY=your_cerebras_api_key
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
@@ -200,6 +255,8 @@ VNPAY_HASH_SECRET=your_vnpay_secret
 SMTP_USERNAME=your_email@gmail.com
 SMTP_PASSWORD=your_app_password
 ```
+
+> **📝 Lưu ý:** RAG system không cần API key bên ngoài. Chỉ cấu hình các service cần thiết cho upload ảnh, thanh toán và email.
 
 ### Bước 4: Build Project
 
@@ -249,13 +306,35 @@ cloudinary.api.key=your_api_key
 cloudinary.api.secret=your_api_secret
 ```
 
-### Cerebras AI (Chatbot)
+### RAG System (AI Chat Widget)
 
-1. Đăng ký API key tại: https://cerebras.ai
-2. Thêm vào file `.env`:
+**Course Shop** sử dụng RAG (Retrieval-Augmented Generation) với các thành phần offline, không cần API key bên ngoài:
 
-```properties
-CEREBRAS_API_KEY=your_api_key
+#### ✅ Đã Tự Động Cấu Hình
+- **Spring AI 1.1.2**: Đã được cấu hình trong `pom.xml`
+- **Transformers Embedding**: Model tự động download từ Hugging Face lần đầu chạy
+- **Vector Store**: SimpleVectorStore chạy in-memory (không cần database riêng)
+- **Intent Classifier**: Rule-based, không cần training
+- **MySQL**: Sử dụng database chính của hệ thống
+
+#### 🎯 Tính Năng Chính
+- **Semantic Search**: Tìm kiếm khóa học thông minh theo ngữ nghĩa
+- **Price Filtering**: Lọc khóa học theo khoảng giá tự động
+- **Intent Classification**: 7 loại intent (COURSE_SEARCH, PRICING_INFO, COURSE_RECOMMEND, ENROLLMENT_INFO, PLATFORM_INFO, GENERAL_CHAT)
+- **HTML Response**: Hiển thị course cards với giá, ảnh, và action buttons
+- **Session Management**: Lưu lịch sử chat theo user
+
+#### 🔧 Không Cần Cấu Hình Thêm
+RAG system hoạt động ngay khi chạy ứng dụng. Không cần API key hay cấu hình phức tạp.
+
+#### 📍 API Endpoint
+- **POST** `/api/rag/chat`: Gửi tin nhắn chat
+- Request body:
+```json
+{
+  "message": "Tìm khóa học Java dưới 200k",
+  "sessionId": "auto-generated-if-null"
+}
 ```
 
 ### Email Configuration (Gmail)
@@ -323,11 +402,31 @@ spring.mail.properties.mail.smtp.starttls.enable=true
     - Đánh dấu hoàn thành sau khi xem xong
     - Tải tài liệu đính kèm (nếu có)
 
-3. **Sử dụng AI Support**:
-    - Click icon chatbot ở góc dưới phải
-    - Hỏi câu hỏi về nội dung bài học
-    - Nhờ giải thích code hoặc debug lỗi
-    - AI sẽ trả lời ngay lập tức
+3. **Sử dụng AI RAG Chat Widget**:
+    - **Mở chat widget**: Click icon chatbot màu tím ở góc dưới phải
+    - **Tìm khóa học**:
+        - Gõ: "Tìm khóa học Java", "Có khóa học Python nào không?"
+        - "Tìm khóa học dưới 200k", "Khóa học từ 100k đến 500k"
+    - **Gợi ý khóa học**:
+        - "Gợi ý khóa học cho người mới bắt đầu"
+        - "Top khóa học phổ biến nhất"
+    - **Xem giá và so sánh**:
+        - "Giá khóa học React là bao nhiêu?"
+        - "Khóa học nào rẻ nhất?"
+    - **Hướng dẫn đăng ký**:
+        - "Làm sao để đăng ký khóa học?"
+        - "Thanh toán như thế nào?"
+    - **Thông tin nền tảng**:
+        - "Course Shop có những tính năng gì?"
+        - "Liên hệ hỗ trợ"
+    - **Tương tác với kết quả**:
+        - Xem course cards với hình ảnh và giá tiền
+        - Click nút **"Chi tiết"** để xem thông tin đầy đủ
+        - Click nút **"Mua ngay"** để thêm vào giỏ hàng
+    - **Tips**: 
+        - Enter để gửi tin nhắn, Shift+Enter để xuống dòng
+        - Chat widget tự động scroll đến tin nhắn mới
+        - Lịch sử chat được lưu theo session
 
 #### 4. Làm Quiz
 1. Sau khi hoàn thành module, click **"Làm Quiz"**
@@ -465,14 +564,34 @@ Course-Shop/
 │   ├── main/
 │   │   ├── java/com/jungle/courseshop/
 │   │   │   ├── config/              # Cấu hình Spring, Security
+│   │   │   │   ├── RagConfig.java             # RAG system configuration
+│   │   │   │   ├── SecurityConfig.java        # CSRF bypass cho /api/rag/**
+│   │   │   │   └── ...
 │   │   │   ├── controller/          # Controllers (MVC)
 │   │   │   │   ├── admin/          # Admin controllers
 │   │   │   │   ├── lecturer/       # Lecturer controllers
-│   │   │   │   └── user/           # User controllers
+│   │   │   │   ├── user/           # User controllers
+│   │   │   │   └── rag/            # 🆕 RAG Controllers
+│   │   │   │       └── RagChatController.java  # Chat API endpoint
 │   │   │   ├── dto/                # Data Transfer Objects
+│   │   │   │   └── rag/            # 🆕 RAG DTOs
+│   │   │   │       ├── IntentResult.java       # Intent classification result
+│   │   │   │       ├── RagChatRequest.java     # Chat request DTO
+│   │   │   │       └── RagChatResponse.java    # Chat response DTO
 │   │   │   ├── entity/             # JPA Entities
+│   │   │   │   └── rag/            # 🆕 RAG Entities
+│   │   │   │       ├── RagChatSession.java     # Chat session entity
+│   │   │   │       └── RagChatMessage.java     # Chat message entity
 │   │   │   ├── repository/         # Spring Data JPA Repositories
+│   │   │   │   └── rag/            # 🆕 RAG Repositories
+│   │   │   │       ├── RagChatSessionRepository.java
+│   │   │   │       └── RagChatMessageRepository.java
 │   │   │   ├── service/            # Business Logic
+│   │   │   │   └── rag/            # 🆕 RAG Services
+│   │   │   │       ├── RagChatService.java     # Core RAG orchestration
+│   │   │   │       ├── IntentClassifierService.java  # Intent classification
+│   │   │   │       ├── VectorStoreService.java # Semantic search
+│   │   │   │       └── CourseEmbeddingService.java   # Embedding generation
 │   │   │   ├── exception/          # Custom Exceptions
 │   │   │   ├── validation/         # Custom Validators
 │   │   │   └── utils/              # Utility classes
@@ -491,17 +610,43 @@ Course-Shop/
 │   │           ├── cart/           # Shopping cart
 │   │           ├── payment/        # Payment pages
 │   │           ├── my-courses/     # Student learning pages
-│   │           ├── ai/             # AI chatbot interface
+│   │           ├── chat/           # 🆕 RAG chat widget (in layout.html)
 │   │           └── email/          # Email templates
 │   │
 │   └── test/                       # Unit & Integration tests
 │
 ├── target/                         # Build output
 ├── .env                           # Environment variables (API keys)
-├── pom.xml                        # Maven dependencies
+├── pom.xml                        # Maven dependencies (Spring AI 1.1.2)
 ├── Dockerfile                     # Docker configuration
+├── RAG_README.md                  # 🆕 RAG system documentation
+├── RAG_SUMMARY.md                 # 🆕 RAG implementation summary
 └── README.md                      # This file
 ```
+
+### 🆕 RAG System Files (14 files created)
+
+**Backend Components:**
+1. `RagConfig.java` - Cấu hình Transformers embedding & vector store
+2. `RagChatController.java` - REST API endpoint cho chat
+3. `RagChatService.java` - Core RAG orchestration logic
+4. `IntentClassifierService.java` - Rule-based intent classification
+5. `VectorStoreService.java` - Semantic search với SimpleVectorStore
+6. `CourseEmbeddingService.java` - Generate embeddings cho khóa học
+7. `RagChatSession.java` - Entity lưu chat session
+8. `RagChatMessage.java` - Entity lưu chat messages
+9. `RagChatSessionRepository.java` - JPA repository cho sessions
+10. `RagChatMessageRepository.java` - JPA repository cho messages
+11. `IntentResult.java` - DTO chứa intent classification result
+12. `RagChatRequest.java` - DTO cho chat request
+13. `RagChatResponse.java` - DTO cho chat response
+
+**Frontend Components:**
+14. `layout.html` - Chat widget UI (480x680px gradient purple theme)
+
+**Dependencies Added:**
+- Spring AI 1.1.2 (spring-ai-bom, spring-ai-core, spring-ai-transformers)
+- ONNX Runtime 1.18.0 (cho Transformers embedding)
 
 ---
 
@@ -539,10 +684,29 @@ Course-Shop/
 - `POST /api/quiz/{id}/submit` - Nộp bài quiz
 - `GET /api/certificate/{courseId}` - Tải chứng chỉ
 
-### AI Support
-- `POST /api/ai/chat` - Chat với AI
-- `POST /api/ai/explain-code` - Giải thích code
-- `POST /api/ai/quiz-hint` - Gợi ý quiz
+### RAG AI Chat Widget
+- `POST /api/rag/chat` - Gửi tin nhắn chat với RAG AI
+    - Request body:
+    ```json
+    {
+      "message": "Tìm khóa học Java dưới 200k",
+      "sessionId": "optional-session-id"
+    }
+    ```
+    - Response:
+    ```json
+    {
+      "response": "<HTML course cards or text>",
+      "sessionId": "generated-or-existing-session-id",
+      "timestamp": "2024-01-01T12:00:00"
+    }
+    ```
+- **Tính năng**:
+    - Tìm kiếm khóa học theo keyword
+    - Lọc theo giá (dưới/trên X VNĐ)
+    - Gợi ý khóa học
+    - Thông tin giá, đăng ký, nền tảng
+    - Hiển thị HTML course cards với action buttons
 
 ### Admin
 - `GET /api/admin/dashboard` - Dashboard stats
@@ -582,13 +746,25 @@ Error: File size exceeds maximum limit
 - Kiểm tra `spring.servlet.multipart.max-file-size` trong config
 - Tăng giới hạn nếu cần thiết
 
-### Lỗi AI Chatbot không hoạt động
+### Lỗi RAG Chat Widget không hoạt động
 ```
-Error: Cerebras API key invalid
+Error: Failed to process chat message
 ```
 **Giải pháp**:
-- Kiểm tra API key trong file `.env`
-- Đảm bảo API key còn hạn và có quota
+- Kiểm tra MySQL database đang chạy và có dữ liệu khóa học
+- Kiểm tra lỗi console: `java.lang.OutOfMemoryError` → tăng heap size: `-Xmx2g`
+- Transformers model đang download lần đầu → chờ 1-2 phút
+- Kiểm tra CSRF token nếu gặp 403 Forbidden
+- Xóa cache và restart ứng dụng
+
+### Lỗi Course Cards không hiển thị đúng
+```
+Error: BigDecimal format exception
+```
+**Giải pháp**:
+- Đảm bảo course.price là BigDecimal trong database
+- Kiểm tra formatCourseCard() method trong RagChatService
+- Thử tìm kiếm với câu hỏi khác: "Tìm khóa học Python"
 
 ---
 
@@ -600,9 +776,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Spring Boot team for the amazing framework
-- Cerebras AI for the AI integration
-- Cloudinary for media storage
+- **Spring Boot team** for the amazing framework
+- **Spring AI** for RAG orchestration capabilities
+- **Hugging Face** for Transformers embedding models
+- **Cloudinary** for media storage
+- **VNPay, PayPal, Stripe** for payment integration
+- **MySQL** for robust database system
 - All contributors and testers
 
 ---
