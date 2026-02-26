@@ -52,7 +52,7 @@ public class User implements UserDetails {
     @Column(name = "role")
     private Role role;
 
-
+    @Builder.Default
     private boolean enabled = true;
 
 

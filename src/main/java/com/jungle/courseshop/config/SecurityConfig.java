@@ -58,8 +58,8 @@ public class SecurityConfig {
 
         http
                 // CSRF (MVC nên BẬT)
-                // Các API gọi bằng fetch() (POST) nên cần bỏ qua CSRF cho /api/ai/** và /api/feedback/**
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/ai/**", "/api/feedback/**"))
+                // Các API gọi bằng fetch() (POST) nên cần bỏ qua CSRF cho /api/ai/**, /api/feedback/**, /api/rag/**
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/ai/**", "/api/feedback/**", "/api/rag/**"))
 
                 // Phân quyền URL
                 .authorizeHttpRequests(auth -> auth

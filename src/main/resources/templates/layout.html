@@ -278,6 +278,645 @@
         </div>
     </footer>
 
+    <!-- RAG Chat Widget -->
+    <div id="ragChatWidget" sec:authorize="isAuthenticated()">
+        <!-- Chat Button -->
+        <button id="ragChatButton" class="rag-chat-button" title="Trợ lý AI">
+            <i class="fas fa-robot"></i>
+            <span class="chat-badge" id="ragChatBadge" style="display: none;">1</span>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="ragChatWindow" class="rag-chat-window" style="display: none;">
+            <!-- Header -->
+            <div class="rag-chat-header">
+                <div class="d-flex align-items-center">
+                    <div class="chat-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ms-2">
+                        <div class="fw-bold">Course Shop AI</div>
+                        <div class="small text-muted">Trợ lý thông minh</div>
+                    </div>
+                </div>
+                <button id="ragChatClose" class="btn-close btn-close-white" title="Đóng"></button>
+            </div>
+
+            <!-- Messages Container -->
+            <div id="ragChatMessages" class="rag-chat-messages">
+                <div class="chat-message bot-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">👋 Xin chào! Tôi là trợ lý AI của Course Shop. Tôi có thể giúp bạn:</div>
+                        <ul class="mt-2 mb-0">
+                            <li>Tìm kiếm và gợi ý khóa học phù hợp</li>
+                            <li>Thông tin về giá cả, giảm giá</li>
+                            <li>Hướng dẫn đăng ký, thanh toán</li>
+                            <li>Trả lời câu hỏi về nền tảng</li>
+                        </ul>
+                        <div class="mt-2">💬 Hãy hỏi tôi bất cứ điều gì!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="rag-chat-input">
+                <textarea id="ragChatTextarea" placeholder="Nhập câu hỏi (Enter để gửi, Shift+Enter để xuống dòng)..." rows="1"></textarea>
+                <button id="ragChatSend" class="btn btn-primary" title="Gửi tin nhắn (Enter)">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+
+            <!-- Session Info -->
+            <div class="rag-chat-footer">
+                <small class="text-muted">Session: <span id="ragSessionDisplay"></span></small>
+                <button id="ragNewSession" class="btn btn-link btn-sm p-0 ms-2" title="Tạo cuộc trò chuyện mới">
+                    <i class="fas fa-redo"></i> Làm mới
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Chat Widget Styles */
+        #ragChatWidget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .rag-chat-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .rag-chat-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .chat-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rag-chat-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 480px;
+            height: 680px;
+            max-height: calc(100vh - 120px);
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .rag-chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            min-height: 72px;
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .rag-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px;
+            background: #f7f9fc;
+            min-height: 0;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            scroll-behavior: smooth;
+        }
+
+        .rag-chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .rag-chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .rag-chat-messages::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .rag-chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .chat-message {
+            display: flex;
+            margin-bottom: 16px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bot-message {
+            justify-content: flex-start;
+        }
+
+        .user-message {
+            justify-content: flex-end;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .user-message .message-avatar {
+            background: #28a745;
+            order: 2;
+            margin-left: 8px;
+        }
+
+        .message-content {
+            max-width: 75%;
+        }
+
+        .user-message .message-content {
+            order: 1;
+        }
+
+        .message-text {
+            padding: 10px 14px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .bot-message .message-text {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .user-message .message-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-content ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .message-intent {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .rag-chat-input {
+            padding: 12px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+            min-height: 64px;
+        }
+
+        #ragChatTextarea {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 10px 16px;
+            resize: none;
+            font-size: 14px;
+            outline: none;
+            max-height: 100px;
+            min-height: 40px;
+        }
+
+        #ragChatTextarea:focus {
+            border-color: #667eea;
+        }
+
+        #ragChatTextarea:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        #ragChatSend {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            flex-shrink: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #ragChatSend:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #ragChatSend:not(:disabled):hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .rag-chat-footer {
+            padding: 8px 16px;
+            background: #f7f9fc;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            min-height: 36px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 10px 14px;
+            background: white;
+            border-radius: 12px;
+            width: fit-content;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #999;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        /* Course Cards in Chat */
+        .chat-course-results {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 8px 0;
+        }
+
+        .course-card-chat {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+        }
+
+        .course-card-chat:hover {
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .course-card-image {
+            width: 110px;
+            min-width: 110px;
+            height: 110px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            background: #f0f0f0;
+        }
+
+        .course-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .course-card-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .course-card-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .course-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .course-card-instructor {
+            font-size: 12px;
+            color: #666;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .course-card-instructor i {
+            color: #667eea;
+        }
+
+        .course-card-stats {
+            font-size: 11px;
+            color: #888;
+            display: flex;
+            gap: 12px;
+        }
+
+        .course-card-stats i {
+            margin-right: 3px;
+        }
+
+        .course-card-footer {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .course-card-price {
+            font-size: 15px;
+            font-weight: 700;
+            color: #667eea;
+            white-space: nowrap;
+        }
+
+        .course-card-actions {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-course-detail,
+        .btn-course-buy {
+            padding: 7px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            flex: 1;
+            white-space: nowrap;
+        }
+
+        .btn-course-detail {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-course-detail:hover {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-course-buy {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-course-buy:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            color: white;
+        }
+
+        /* Chat Response Styling */
+        .chat-response-header {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .chat-hint {
+            background: #f0f7ff;
+            border-left: 3px solid #667eea;
+            padding: 8px 12px;
+            margin: 8px 0;
+            font-size: 13px;
+            color: #555;
+            border-radius: 4px;
+        }
+
+        .chat-promo-box,
+        .chat-info-box,
+        .chat-steps {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+
+        .chat-promo-box {
+            background: linear-gradient(135deg, #fff5f5 0%, #fff0f0 100%);
+            border: 1px solid #ffcccc;
+        }
+
+        .chat-info-box ul,
+        .chat-promo-box ul,
+        .chat-steps ol {
+            margin: 8px 0 0 0;
+            padding-left: 24px;
+        }
+
+        .chat-info-box li,
+        .chat-promo-box li,
+        .chat-steps li {
+            margin: 4px 0;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .chat-support-footer {
+            background: #f7f9fc;
+            border-top: 1px solid #e0e0e0;
+            padding: 10px;
+            margin-top: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .chat-support-footer p {
+            margin: 0;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-style: italic;
+        }
+
+        /* Make message text support HTML content */
+        .message-text {
+            padding: 10px 14px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message-text p {
+            margin: 4px 0;
+        }
+
+        .message-text strong {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .message-text ul,
+        .message-text ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message-text li {
+            margin: 4px 0;
+        }
+
+        .message-text a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .message-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .rag-chat-window {
+                width: calc(100vw - 40px);
+                height: 600px;
+                bottom: 80px;
+                right: -10px;
+            }
+            
+            .course-card-image {
+                width: 90px;
+                min-width: 90px;
+                height: 90px;
+            }
+        }
+    </style>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
     <script>
@@ -291,6 +930,213 @@
             });
         });
     </script>
+
+    <!-- RAG Chat Widget Script -->
+    <script th:inline="javascript">
+        (function() {
+            // Only run if user is authenticated
+            const widget = document.getElementById('ragChatWidget');
+            if (!widget) return;
+
+            const chatButton = document.getElementById('ragChatButton');
+            const chatWindow = document.getElementById('ragChatWindow');
+            const chatClose = document.getElementById('ragChatClose');
+            const chatMessages = document.getElementById('ragChatMessages');
+            const chatTextarea = document.getElementById('ragChatTextarea');
+            const chatSend = document.getElementById('ragChatSend');
+            const sessionDisplay = document.getElementById('ragSessionDisplay');
+            const newSessionBtn = document.getElementById('ragNewSession');
+
+            let currentSessionId = null;
+            sessionDisplay.textContent = 'Chưa có';
+
+            // Toggle chat window
+            chatButton.addEventListener('click', () => {
+                const isHidden = chatWindow.style.display === 'none';
+                chatWindow.style.display = isHidden ? 'block' : 'none';
+                if (isHidden) {
+                    chatTextarea.focus();
+                }
+            });
+
+            chatClose.addEventListener('click', () => {
+                chatWindow.style.display = 'none';
+            });
+
+            // New session
+            newSessionBtn.addEventListener('click', () => {
+                currentSessionId = null;
+                sessionDisplay.textContent = 'Chưa có';
+                chatMessages.innerHTML = `
+                    <div class="chat-message bot-message">
+                        <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                        <div class="message-content">
+                            <div class="message-text">✨ Đã tạo cuộc trò chuyện mới. Hãy hỏi tôi bất cứ điều gì!</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Send message
+            async function sendMessage() {
+                const message = chatTextarea.value.trim();
+                if (!message || chatTextarea.disabled) return;
+
+                // Disable input while processing
+                chatTextarea.disabled = true;
+                chatSend.disabled = true;
+
+                // Add user message
+                addMessage(message, 'user');
+                chatTextarea.value = '';
+                chatTextarea.style.height = 'auto';
+
+                // Show typing indicator
+                const typingId = showTyping();
+
+                try {
+                    // Build request payload
+                    const payload = { message: message };
+                    if (currentSessionId) {
+                        payload.sessionId = currentSessionId;
+                    }
+
+                    const response = await fetch('/api/rag/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+
+                    const data = await response.json();
+                    removeTyping(typingId);
+
+                    // Check if response is successful
+                    if (!data.success) {
+                        addMessage('❌ Lỗi: ' + (data.message || 'Không thể xử lý yêu cầu'), 'bot');
+                        return;
+                    }
+
+                    // Update session ID from backend
+                    if (data.sessionId) {
+                        currentSessionId = data.sessionId;
+                        sessionDisplay.textContent = 'ID: ' + currentSessionId;
+                    }
+
+                    // Add bot response
+                    addMessage(data.response, 'bot', data.intent);
+
+                } catch (error) {
+                    removeTyping(typingId);
+                    addMessage('❌ Xin lỗi, đã có lỗi xảy ra: ' + error.message, 'bot');
+                } finally {
+                    // Always re-enable input
+                    chatTextarea.disabled = false;
+                    chatSend.disabled = false;
+                    chatTextarea.focus();
+                }
+            }
+
+            function addMessage(text, type, intent = null) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${type}-message`;
+
+                const avatarIcon = type === 'bot' ? 'fa-robot' : 'fa-user';
+                let intentBadge = '';
+                
+                if (intent) {
+                    const intentLabels = {
+                        'COURSE_SEARCH': '🔍 Tìm kiếm',
+                        'COURSE_RECOMMEND': '💡 Gợi ý',
+                        'PRICING_INFO': '💰 Giá cả',
+                        'DISCOUNT_POLICY': '🎁 Giảm giá',
+                        'ENROLLMENT_INFO': '📝 Đăng ký',
+                        'PLATFORM_INFO': 'ℹ️ Thông tin',
+                        'GENERAL_CHAT': '💬 Trò chuyện'
+                    };
+                    intentBadge = `<div class="message-intent">${intentLabels[intent] || intent}</div>`;
+                }
+
+                messageDiv.innerHTML = `
+                    <div class="message-avatar"><i class="fas ${avatarIcon}"></i></div>
+                    <div class="message-content">
+                        ${intentBadge}
+                        <div class="message-text">${escapeHtml(text)}</div>
+                    </div>
+                `;
+
+                chatMessages.appendChild(messageDiv);
+                
+                // Smooth scroll to bottom
+                setTimeout(() => {
+                    chatMessages.scrollTo({
+                        top: chatMessages.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }, 100);
+            }
+
+            function showTyping() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'chat-message bot-message';
+                typingDiv.id = 'typing-indicator';
+                typingDiv.innerHTML = `
+                    <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                    <div class="message-content">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                `;
+                chatMessages.appendChild(typingDiv);
+                
+                // Smooth scroll to bottom
+                setTimeout(() => {
+                    chatMessages.scrollTo({
+                        top: chatMessages.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }, 100);
+                
+                return 'typing-indicator';
+            }
+
+            function removeTyping(id) {
+                const typing = document.getElementById(id);
+                if (typing) typing.remove();
+            }
+
+            function escapeHtml(text) {
+                // Allow HTML for bot responses (with basic sanitization)
+                // Only escape script tags for security
+                return text.replace(/<script[^>]*>.*?<\/script>/gi, '')
+                          .replace(/javascript:/gi, '');
+            }
+
+            // Event listeners
+            chatSend.addEventListener('click', sendMessage);
+
+            chatTextarea.addEventListener('keydown', (e) => {
+                // Enter to send (without Ctrl), Shift+Enter for new line
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Auto-resize textarea
+            chatTextarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+            });
+        })();
+    </script>
+
     <div layout:fragment="scripts">
         <!-- Page specific scripts will be inserted here -->
     </div>

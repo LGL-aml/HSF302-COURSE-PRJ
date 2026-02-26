@@ -86,6 +86,78 @@
         </div>
     </div>
 
+    <!-- RAG Chat Section -->
+    <div class="row g-4 mt-2">
+        <div class="col-12">
+            <div class="admin-card p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0">🤖 RAG Smart Chat</h5>
+                    <span class="badge bg-primary">Tìm kiếm thông minh với Vector Store</span>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>💡 Hệ thống RAG (Retrieval-Augmented Generation):</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Tự động phân loại ý định câu hỏi (tìm khóa học, giá cả, gợi ý, chính sách...)</li>
+                        <li>Tìm kiếm ngữ cảnh phù hợp từ database qua Vector Embedding</li>
+                        <li>Sinh câu trả lời chính xác dựa trên dữ liệu thực tế</li>
+                        <li>Lưu lịch sử chat theo session</li>
+                    </ul>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold">Câu hỏi của bạn</label>
+                        <textarea id="ragQuestion" class="form-control" rows="3" placeholder="Ví dụ: Tôi muốn học lập trình web, có khóa học nào phù hợp?"></textarea>
+                        <div class="form-text">
+                            Bạn có thể hỏi về: khóa học, giá cả, giảm giá, đăng ký, giảng viên, chủ đề...
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Session ID (tùy chọn)</label>
+                        <input id="ragSessionId" type="text" class="form-control" placeholder="Auto-generated" readonly />
+                        <div class="form-text">Tự động tạo để lưu lịch sử chat</div>
+                        <button id="ragNewSessionBtn" class="btn btn-outline-secondary btn-sm mt-2 w-100">Tạo Session Mới</button>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button id="ragChatBtn" class="btn btn-primary btn-lg">
+                        <i class="bi bi-chat-dots"></i> Gửi câu hỏi
+                    </button>
+                    <button id="ragClearBtn" class="btn btn-outline-secondary btn-lg ms-2">
+                        <i class="bi bi-trash"></i> Xóa kết quả
+                    </button>
+                </div>
+
+                <hr class="my-4" />
+
+                <div id="ragResultContainer" style="display: none;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">🎯 Phân loại ý định</label>
+                            <div id="ragIntent" class="p-3 bg-light rounded border"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">📊 Metadata</label>
+                            <div id="ragMetadata" class="p-3 bg-light rounded border small"></div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label fw-bold">💬 Câu trả lời</label>
+                        <div id="ragAnswer" class="p-4 bg-white rounded border" style="white-space: pre-wrap; min-height: 120px;"></div>
+                    </div>
+
+                    <div class="mt-3">
+                        <label class="form-label fw-bold">🔍 Ngữ cảnh được truy xuất</label>
+                        <pre id="ragContext" class="p-3 bg-light rounded border small" style="white-space: pre-wrap; max-height: 200px; overflow-y: auto;"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         async function getJson(url) {
             const res = await fetch(url);
@@ -190,6 +262,125 @@
                 document.getElementById('quizOut').textContent = 'Lỗi: ' + e.message;
             } finally {
                 btn.disabled = false;
+            }
+        });
+
+        // ====== RAG Chat Implementation ======
+        let currentSessionId = generateSessionId();
+        document.getElementById('ragSessionId').value = currentSessionId;
+
+        function generateSessionId() {
+            return 'session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+        }
+
+        // New Session Button
+        document.getElementById('ragNewSessionBtn').addEventListener('click', () => {
+            currentSessionId = generateSessionId();
+            document.getElementById('ragSessionId').value = currentSessionId;
+            document.getElementById('ragQuestion').value = '';
+            document.getElementById('ragResultContainer').style.display = 'none';
+            alert('✅ Đã tạo session mới: ' + currentSessionId);
+        });
+
+        // Clear Result Button
+        document.getElementById('ragClearBtn').addEventListener('click', () => {
+            document.getElementById('ragResultContainer').style.display = 'none';
+            document.getElementById('ragAnswer').textContent = '';
+            document.getElementById('ragContext').textContent = '';
+            document.getElementById('ragIntent').textContent = '';
+            document.getElementById('ragMetadata').textContent = '';
+        });
+
+        // RAG Chat Button
+        document.getElementById('ragChatBtn').addEventListener('click', async () => {
+            const question = document.getElementById('ragQuestion').value.trim();
+            if (!question) {
+                alert('⚠️ Vui lòng nhập câu hỏi!');
+                return;
+            }
+
+            const btn = document.getElementById('ragChatBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+
+            // Show result container with loading state
+            document.getElementById('ragResultContainer').style.display = 'block';
+            document.getElementById('ragAnswer').textContent = '⏳ Đang phân tích câu hỏi và tìm kiếm thông tin...';
+            document.getElementById('ragIntent').textContent = '⏳ Đang phân loại...';
+            document.getElementById('ragContext').textContent = '⏳ Đang truy xuất ngữ cảnh...';
+            document.getElementById('ragMetadata').textContent = '';
+
+            try {
+                const payload = {
+                    sessionId: currentSessionId,
+                    userMessage: question
+                };
+
+                const response = await postJson('/api/rag/chat', payload);
+
+                // Display Intent
+                const intentBadges = {
+                    'COURSE_SEARCH': '🔍 Tìm kiếm khóa học',
+                    'COURSE_RECOMMEND': '💡 Gợi ý khóa học',
+                    'PRICING_INFO': '💰 Thông tin giá',
+                    'DISCOUNT_POLICY': '🎁 Chính sách giảm giá',
+                    'ENROLLMENT_INFO': '📝 Thông tin đăng ký',
+                    'PLATFORM_INFO': 'ℹ️ Thông tin nền tảng',
+                    'GENERAL_CHAT': '💬 Trò chuyện chung'
+                };
+                const intentLabel = intentBadges[response.intent] || response.intent;
+                document.getElementById('ragIntent').innerHTML = `
+                    <span class="badge bg-success fs-6">${intentLabel}</span>
+                    <div class="mt-2 small text-muted">Confidence: ${(response.confidence * 100).toFixed(1)}%</div>
+                `;
+
+                // Display Answer
+                document.getElementById('ragAnswer').innerHTML = `
+                    <div class="mb-2 fw-bold text-primary">💬 Câu hỏi:</div>
+                    <div class="mb-3 fst-italic">${response.userMessage}</div>
+                    <div class="mb-2 fw-bold text-success">✨ Trả lời:</div>
+                    <div>${response.answer}</div>
+                `;
+
+                // Display Context
+                if (response.retrievedContext && response.retrievedContext.length > 0) {
+                    const contextHtml = response.retrievedContext
+                        .map((ctx, idx) => `<div class="mb-2"><strong>[${idx + 1}]</strong> ${ctx}</div>`)
+                        .join('\n');
+                    document.getElementById('ragContext').innerHTML = contextHtml;
+                } else {
+                    document.getElementById('ragContext').textContent = '(Không có ngữ cảnh cụ thể)';
+                }
+
+                // Display Metadata
+                const metadata = {
+                    'Timestamp': response.timestamp,
+                    'Session ID': response.sessionId,
+                    'Context Items': response.retrievedContext ? response.retrievedContext.length : 0
+                };
+                const metadataHtml = Object.entries(metadata)
+                    .map(([key, val]) => `<strong>${key}:</strong> ${val}`)
+                    .join('<br>');
+                document.getElementById('ragMetadata').innerHTML = metadataHtml;
+
+            } catch (e) {
+                document.getElementById('ragAnswer').innerHTML = `
+                    <div class="alert alert-danger mb-0">
+                        <strong>❌ Lỗi:</strong> ${e.message}
+                    </div>
+                `;
+                document.getElementById('ragIntent').textContent = 'N/A';
+                document.getElementById('ragContext').textContent = 'N/A';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-chat-dots"></i> Gửi câu hỏi';
+            }
+        });
+
+        // Enable Enter key to send question
+        document.getElementById('ragQuestion').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                document.getElementById('ragChatBtn').click();
             }
         });
     </script>

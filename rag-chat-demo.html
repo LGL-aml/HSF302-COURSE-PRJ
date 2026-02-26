@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Chat Demo - Course Shop</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f5f5f5;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-intent {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-radius: 0 0 20px 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .chat-input-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .send-button:hover {
+            transform: scale(1.05);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 12px 18px;
+            background: white;
+            border-radius: 18px;
+            width: fit-content;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .quick-questions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .quick-question {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .quick-question:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .session-info {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🤖 RAG Chat Assistant</h1>
+            <p>Trợ lý AI thông minh của Course Shop</p>
+        </div>
+
+        <div class="session-info" id="sessionInfo">
+            Chưa có phiên chat
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div class="message-content">
+                    Xin chào! Tôi là trợ lý AI của Course Shop. Tôi có thể giúp bạn:
+                    <br>📚 Tìm kiếm khóa học phù hợp
+                    <br>💰 Tư vấn về giá và chính sách giảm giá
+                    <br>📝 Hướng dẫn đăng ký
+                    <br>ℹ️ Cung cấp thông tin về nền tảng
+                    <br><br>Bạn cần tôi giúp gì?
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="quick-questions">
+                <div class="quick-question" onclick="sendQuickQuestion('Tìm khóa học Java')">🔍 Tìm khóa học Java</div>
+                <div class="quick-question" onclick="sendQuickQuestion('Gợi ý khóa học cho người mới')">💡 Khóa học cho người mới</div>
+                <div class="quick-question" onclick="sendQuickQuestion('Có khóa học nào dưới 500k?')">💰 Khóa học dưới 500k</div>
+                <div class="quick-question" onclick="sendQuickQuestion('Chính sách giảm giá?')">🎁 Chính sách giảm giá</div>
+            </div>
+            <form class="chat-input-form" id="chatForm">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="messageInput" 
+                    placeholder="Nhập câu hỏi của bạn..."
+                    autocomplete="off"
+                >
+                <button type="submit" class="send-button" id="sendButton">Gửi</button>
+            </form>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3979/api/rag/chat';
+        let sessionId = null;
+        const userId = 'demo-user-' + Date.now();
+
+        const chatMessages = document.getElementById('chatMessages');
+        const chatForm = document.getElementById('chatForm');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const sessionInfo = document.getElementById('sessionInfo');
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            await sendMessage(message);
+        });
+
+        async function sendQuickQuestion(question) {
+            await sendMessage(question);
+        }
+
+        async function sendMessage(message) {
+            // Add user message to chat
+            addMessage('user', message);
+            messageInput.value = '';
+
+            // Disable input
+            messageInput.disabled = true;
+            sendButton.disabled = true;
+
+            // Show typing indicator
+            typingIndicator.style.display = 'block';
+            chatMessages.appendChild(typingIndicator);
+            scrollToBottom();
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        sessionId: sessionId,
+                        userId: userId
+                    })
+                });
+
+                const data = await response.json();
+
+                // Hide typing indicator
+                typingIndicator.style.display = 'none';
+
+                if (data.success) {
+                    // Update session ID
+                    if (!sessionId) {
+                        sessionId = data.sessionId;
+                        updateSessionInfo();
+                    }
+
+                    // Add assistant response
+                    addMessage('assistant', data.response, data.intent);
+                } else {
+                    addMessage('assistant', '❌ Xin lỗi, đã có lỗi xảy ra: ' + data.message);
+                }
+            } catch (error) {
+                typingIndicator.style.display = 'none';
+                addMessage('assistant', '❌ Không thể kết nối đến server. Vui lòng kiểm tra kết nối.');
+                console.error('Error:', error);
+            }
+
+            // Enable input
+            messageInput.disabled = false;
+            sendButton.disabled = false;
+            messageInput.focus();
+        }
+
+        function addMessage(role, content, intent = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = content.replace(/\n/g, '<br>');
+
+            if (intent && role === 'assistant') {
+                const intentDiv = document.createElement('div');
+                intentDiv.className = 'message-intent';
+                intentDiv.textContent = `Intent: ${intent}`;
+                contentDiv.appendChild(intentDiv);
+            }
+
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function updateSessionInfo() {
+            sessionInfo.textContent = `Phiên chat: #${sessionId} | User: ${userId}`;
+        }
+    </script>
+</body>
+</html>
