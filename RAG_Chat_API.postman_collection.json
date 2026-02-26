@@ -1,0 +1,189 @@
+{
+  "info": {
+    "name": "Course Shop - RAG Chat API",
+    "description": "Collection for testing RAG Chat functionality",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "RAG Chat",
+      "item": [
+        {
+          "name": "1. Course Search - Java",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Tìm khóa học Java cho người mới bắt đầu\",\n  \"userId\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3979/api/rag/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3979",
+              "path": ["api", "rag", "chat"]
+            }
+          }
+        },
+        {
+          "name": "2. Course Recommend - Web Development",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Tôi muốn học lập trình web, nên bắt đầu từ đâu?\",\n  \"userId\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3979/api/rag/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3979",
+              "path": ["api", "rag", "chat"]
+            }
+          }
+        },
+        {
+          "name": "3. Pricing Info - Budget Constraint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Có khóa học nào dưới 500.000 VNĐ không?\",\n  \"userId\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3979/api/rag/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3979",
+              "path": ["api", "rag", "chat"]
+            }
+          }
+        },
+        {
+          "name": "4. Discount Policy - Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Có giảm giá cho sinh viên không?\",\n  \"userId\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3979/api/rag/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3979",
+              "path": ["api", "rag", "chat"]
+            }
+          }
+        },
+        {
+          "name": "5. Enrollment Info",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Làm sao để đăng ký khóa học?\",\n  \"userId\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3979/api/rag/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3979",
+              "path": ["api", "rag", "chat"]
+            }
+          }
+        },
+        {
+          "name": "6. Platform Info",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Cho tôi biết về nền tảng Course Shop\",\n  \"userId\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3979/api/rag/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3979",
+              "path": ["api", "rag", "chat"]
+            }
+          }
+        },
+        {
+          "name": "7. With Session - Follow-up Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Khóa học đó giá bao nhiêu?\",\n  \"sessionId\": 1,\n  \"userId\": \"user123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:3979/api/rag/chat",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3979",
+              "path": ["api", "rag", "chat"]
+            }
+          }
+        },
+        {
+          "name": "Get Chat History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3979/api/rag/chat/history/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3979",
+              "path": ["api", "rag", "chat", "history", "1"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
