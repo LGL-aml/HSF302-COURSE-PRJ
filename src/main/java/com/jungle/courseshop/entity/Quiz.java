@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-public class CourseModule {
+public class Quiz {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,18 +21,22 @@ public class CourseModule {
     @Column(nullable = false)
     private String title;
 
+    private String description;
 
-    @OneToMany(mappedBy = "courseModule", cascade = CascadeType.ALL)
-    private List<CourseVideo> videos = new ArrayList<>();
+    /**
+     * Điểm đạt tối thiểu (%) để pass quiz
+     */
+    private Integer passScore = 70;
 
-    @OneToOne(mappedBy = "courseModule", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Quiz quiz;
+    @OneToOne
+    @JoinColumn(name = "module_id", nullable = false)
+    private CourseModule courseModule;
 
-    private Integer orderIndex; // Order in the course
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
+    private List<QuizQuestion> questions = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "course_id")
-    private Course course;
+    private Boolean active = true;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

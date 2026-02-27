@@ -22,6 +22,9 @@ public class CourseModuleRequest {
     @PositiveOrZero(message = "Thứ tự module không được âm")
     private Integer orderIndex;
 
+    // Quiz cho module này (có thể null nếu module không có quiz)
+    private QuizRequest quiz;
+
     @Data
     public static class VideoCourseRequest {
         @NotBlank(message = "Tiêu đề video không được để trống")

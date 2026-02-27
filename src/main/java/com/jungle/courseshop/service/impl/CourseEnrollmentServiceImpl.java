@@ -35,6 +35,8 @@ public class CourseEnrollmentServiceImpl implements CourseEnrollmentService {
     private final WatchedVideoRepo watchedVideoRepository;
     private final CourseVideoRepo videoCourseRepository;
     private final CertificateRepo certificateRepository;
+    private final QuizAttemptRepo quizAttemptRepo;
+    private final QuizRepo quizRepo;
 
     @Transactional
     public CourseEnrollmentResponse enrollCourse(Long courseId) throws MessagingException, UnsupportedEncodingException, MessagingException {
@@ -159,7 +161,7 @@ public class CourseEnrollmentServiceImpl implements CourseEnrollmentService {
             });
         }
 
-        // Tính progress
+        // Tính progress (video + quiz)
         Course course = video.getCourseModule().getCourse();
         CourseEnrollment enrollment = enrollmentRepository.findByUserAndCourse(user, course)
                 .orElseThrow(() -> new RuntimeException("You are not enrolled in this course"));
@@ -169,16 +171,71 @@ public class CourseEnrollmentServiceImpl implements CourseEnrollmentService {
             return;
         }
 
+        updateCourseProgress(user, course, enrollment);
+    }
+
+    /**
+     * Cập nhật lại progress sau khi làm quiz (gọi từ QuizService)
+     */
+    @Transactional
+    public void recalculateProgress(Long courseId) throws MessagingException, UnsupportedEncodingException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+        User user = userRepository.findByUsernameAndEnabledTrue(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+
+        CourseEnrollment enrollment = enrollmentRepository.findByUserAndCourse(user, course)
+                .orElseThrow(() -> new RuntimeException("You are not enrolled in this course"));
+
+        if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
+            return; // Đã hoàn thành rồi
+        }
+
+        updateCourseProgress(user, course, enrollment);
+    }
+
+    /**
+     * Tính progress = (video đã xem + quiz đã pass) / (tổng video + tổng quiz) * 100
+     * Hoàn thành khóa học khi: xem hết video VÀ pass hết quiz
+     */
+    private void updateCourseProgress(User user, Course course, CourseEnrollment enrollment) throws MessagingException, UnsupportedEncodingException {
         long totalVideos = videoCourseRepository.countByCourseModule_Course(course);
         long watchedVideos = watchedVideoRepository.countByUserAndVideo_CourseModule_Course_AndWatchedTrue(user, course);
 
-        if (totalVideos == 0) throw new RuntimeException("Khóa học này không có video nào");
+        // Đếm quiz theo module
+        List<CourseModule> modules = moduleRepository.findByCourseOrderByOrderIndexAsc(course);
+        long totalQuizzes = 0;
+        long passedQuizzes = 0;
+        for (CourseModule module : modules) {
+            Optional<Quiz> quizOpt = quizRepo.findByCourseModule(module);
+            if (quizOpt.isPresent() && quizOpt.get().getActive()) {
+                totalQuizzes++;
+                if (quizAttemptRepo.existsByUserAndQuizAndPassedTrue(user, quizOpt.get())) {
+                    passedQuizzes++;
+                }
+            }
+        }
 
-        double progress = (watchedVideos * 100.0) / totalVideos;
+        long totalItems = totalVideos + totalQuizzes;
+        long completedItems = watchedVideos + passedQuizzes;
 
-        enrollment.setProgress(progress);
+        if (totalItems == 0) {
+            enrollment.setProgress(0.0);
+            enrollmentRepository.save(enrollment);
+            return;
+        }
 
-        if (progress >= 100.0) {
+        double progress = (completedItems * 100.0) / totalItems;
+        enrollment.setProgress(Math.min(progress, 100.0));
+
+        // Hoàn thành khi xem hết video VÀ pass hết quiz
+        boolean allVideosWatched = totalVideos == 0 || watchedVideos >= totalVideos;
+        boolean allQuizzesPassed = totalQuizzes == 0 || passedQuizzes >= totalQuizzes;
+
+        if (allVideosWatched && allQuizzesPassed && progress >= 100.0) {
             enrollment.setStatus(EnrollmentStatus.COMPLETED);
             enrollment.setCompletionDate(LocalDateTime.now());
             emailService.sendCourseCompletionEmail(user.getEmail(),

@@ -60,6 +60,27 @@
             background: linear-gradient(90deg, #007bff, #0056b3);
             transition: width 0.3s;
         }
+        /* Quiz styles */
+        .quiz-btn-module {
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        .quiz-btn-module:hover { opacity: 0.9; }
+        .quiz-btn-module.passed { background: linear-gradient(135deg, #28a745, #218838); }
+        .quiz-option-label { cursor: pointer; display: block; padding: 10px 15px; border: 2px solid #dee2e6; border-radius: 8px; margin-bottom: 8px; transition: all 0.2s; }
+        .quiz-option-label:hover { border-color: #007bff; background: #f0f7ff; }
+        .quiz-option-label input:checked + span { font-weight: 600; }
+        .quiz-option-label.correct { border-color: #28a745; background: #d4edda; }
+        .quiz-option-label.incorrect { border-color: #dc3545; background: #f8d7da; }
+        .quiz-option-label.was-correct { border-color: #28a745; background: #d4edda; }
     </style>
 </head>
 <body>
@@ -192,12 +213,49 @@
                                                     <span th:text="${video.title}">Video Title</span>
                                                 </div>
                                             </div>
+                                            <!-- Quiz button for this module -->
+                                            <div th:if="${module.quiz != null}">
+                                                <button class="quiz-btn-module"
+                                                        th:attr="data-module-id=${module.id}, data-quiz-id=${module.quiz.id}"
+                                                        onclick="openQuiz(this)">
+                                                    <i class="fas fa-question-circle"></i>
+                                                    <span th:text="${module.quiz.title}">Quiz</span>
+                                                    <span class="badge bg-light text-dark ms-auto"
+                                                          th:text="${#lists.size(module.quiz.questions)} + ' câu'">0 câu</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Modal -->
+    <div class="modal fade" id="quizModal" tabindex="-1" aria-labelledby="quizModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="quizModalLabel">
+                        <i class="fas fa-question-circle me-2"></i><span id="quizTitle">Quiz</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="quizBody">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-warning" role="status"></div>
+                        <p class="mt-2">Đang tải quiz...</p>
+                    </div>
+                </div>
+                <div class="modal-footer" id="quizFooter">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-warning" id="submitQuizBtn" onclick="submitQuiz()" style="display:none;">
+                        <i class="fas fa-paper-plane me-1"></i>Nộp bài
+                    </button>
                 </div>
             </div>
         </div>
@@ -445,11 +503,244 @@
 
     function updateProgress() {
         const watchedCount = document.querySelectorAll('.video-item.watched').length;
-        const totalCount = allVideos.length;
-        const percentage = totalCount > 0 ? Math.round((watchedCount / totalCount) * 100) : 0;
+        const totalVideos = allVideos.length;
+        const totalQuizzes = document.querySelectorAll('.quiz-btn-module').length;
+        const passedQuizzes = document.querySelectorAll('.quiz-btn-module.passed').length;
+
+        const totalItems = totalVideos + totalQuizzes;
+        const completedItems = watchedCount + passedQuizzes;
+        const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
         document.getElementById('progressBar').style.width = percentage + '%';
         document.getElementById('progressText').textContent = percentage + '%';
+    }
+
+    // ===== QUIZ FUNCTIONS =====
+    let currentQuizId = null;
+    let currentQuizData = null;
+
+    async function openQuiz(button) {
+        const moduleId = button.getAttribute('data-module-id');
+        currentQuizId = button.getAttribute('data-quiz-id');
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('quizModal'));
+        modal.show();
+
+        // Reset
+        document.getElementById('quizBody').innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-warning" role="status"></div>
+                <p class="mt-2">Đang tải quiz...</p>
+            </div>
+        `;
+        document.getElementById('submitQuizBtn').style.display = 'none';
+
+        try {
+            const res = await fetch('/api/quiz/module/' + moduleId);
+            if (!res.ok) throw new Error('Không tải được quiz');
+            currentQuizData = await res.json();
+            renderQuiz(currentQuizData);
+        } catch (e) {
+            document.getElementById('quizBody').innerHTML = `
+                <div class="text-center text-danger py-4">
+                    <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                    <p>${e.message}</p>
+                </div>
+            `;
+        }
+    }
+
+    function renderQuiz(quiz) {
+        document.getElementById('quizTitle').textContent = quiz.title || 'Quiz';
+
+        let html = '';
+        if (quiz.description) {
+            html += `<div class="alert alert-info mb-3"><i class="fas fa-info-circle me-2"></i>${escapeHtml(quiz.description)}</div>`;
+        }
+        html += `<div class="alert alert-warning mb-3"><small><i class="fas fa-trophy me-1"></i>Điểm đạt tối thiểu: <strong>${quiz.passScore}%</strong></small></div>`;
+
+        quiz.questions.forEach((q, qIdx) => {
+            html += `
+                <div class="card mb-3 question-display" data-question-id="${q.id}">
+                    <div class="card-body">
+                        <h6 class="card-title"><span class="badge bg-info me-2">Câu ${qIdx + 1}</span>${escapeHtml(q.questionText)}</h6>
+                        <div class="options-list mt-3">
+            `;
+            q.options.forEach((opt, optIdx) => {
+                const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+                html += `
+                    <label class="quiz-option-label" data-option-id="${opt.id}">
+                        <input type="radio" name="question_${q.id}" value="${opt.id}" class="me-2" style="display:none;">
+                        <span><strong>${letters[optIdx] || (optIdx + 1)}.</strong> ${escapeHtml(opt.optionText)}</span>
+                    </label>
+                `;
+            });
+            html += `</div></div></div>`;
+        });
+
+        document.getElementById('quizBody').innerHTML = html;
+        document.getElementById('submitQuizBtn').style.display = 'inline-block';
+
+        // Add click handlers for options
+        document.querySelectorAll('.quiz-option-label').forEach(label => {
+            label.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                radio.checked = true;
+                // Highlight selected
+                this.closest('.options-list').querySelectorAll('.quiz-option-label').forEach(l => {
+                    l.style.borderColor = '#dee2e6';
+                    l.style.background = '';
+                });
+                this.style.borderColor = '#007bff';
+                this.style.background = '#e7f3ff';
+            });
+        });
+    }
+
+    async function submitQuiz() {
+        if (!currentQuizData) return;
+
+        // Collect answers
+        const answers = {};
+        let unanswered = 0;
+        currentQuizData.questions.forEach(q => {
+            const selected = document.querySelector(`input[name="question_${q.id}"]:checked`);
+            if (selected) {
+                answers[q.id] = parseInt(selected.value);
+            } else {
+                unanswered++;
+            }
+        });
+
+        if (unanswered > 0) {
+            if (!confirm(`Bạn còn ${unanswered} câu chưa trả lời. Bạn có muốn nộp bài không?`)) {
+                return;
+            }
+        }
+
+        document.getElementById('submitQuizBtn').disabled = true;
+        document.getElementById('submitQuizBtn').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang chấm...';
+
+        try {
+            const res = await fetch('/api/quiz/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quizId: parseInt(currentQuizId), answers: answers })
+            });
+
+            if (!res.ok) throw new Error('Lỗi nộp bài');
+            const result = await res.json();
+            renderQuizResult(result);
+        } catch (e) {
+            alert('Lỗi: ' + e.message);
+            document.getElementById('submitQuizBtn').disabled = false;
+            document.getElementById('submitQuizBtn').innerHTML = '<i class="fas fa-paper-plane me-1"></i>Nộp bài';
+        }
+    }
+
+    function renderQuizResult(result) {
+        const passClass = result.passed ? 'success' : 'danger';
+        const passIcon = result.passed ? 'check-circle' : 'times-circle';
+        const passText = result.passed ? 'ĐẠT' : 'CHƯA ĐẠT';
+
+        let html = `
+            <div class="text-center mb-4">
+                <i class="fas fa-${passIcon} fa-4x text-${passClass} mb-3"></i>
+                <h4 class="text-${passClass}">${passText}</h4>
+                <div class="row justify-content-center mt-3">
+                    <div class="col-auto">
+                        <div class="card border-${passClass}">
+                            <div class="card-body text-center py-2 px-4">
+                                <h2 class="text-${passClass} mb-0">${Math.round(result.score)}%</h2>
+                                <small class="text-muted">Điểm số</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="card">
+                            <div class="card-body text-center py-2 px-4">
+                                <h2 class="mb-0">${result.correctAnswers}/${result.totalQuestions}</h2>
+                                <small class="text-muted">Đúng</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="card">
+                            <div class="card-body text-center py-2 px-4">
+                                <h2 class="mb-0">${result.attemptCount}</h2>
+                                <small class="text-muted">Lần thử</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <small class="text-muted mt-2 d-block">Điểm đạt tối thiểu: ${result.passScore}%</small>
+            </div>
+            <hr>
+            <h5 class="mb-3"><i class="fas fa-list-check me-2"></i>Chi tiết đáp án</h5>
+        `;
+
+        result.questionResults.forEach((qr, idx) => {
+            const qClass = qr.isCorrect ? 'success' : 'danger';
+            const qIcon = qr.isCorrect ? 'check' : 'times';
+            html += `
+                <div class="card mb-3 border-${qClass}">
+                    <div class="card-body">
+                        <h6><span class="badge bg-${qClass} me-2"><i class="fas fa-${qIcon}"></i> Câu ${idx + 1}</span>${escapeHtml(qr.questionText)}</h6>
+                        <div class="mt-2">
+            `;
+
+            qr.options.forEach(opt => {
+                let optClass = '';
+                let optIcon = '';
+                if (opt.isCorrect) {
+                    optClass = 'correct';
+                    optIcon = '<i class="fas fa-check text-success me-1"></i>';
+                }
+                if (opt.isSelected && !opt.isCorrect) {
+                    optClass = 'incorrect';
+                    optIcon = '<i class="fas fa-times text-danger me-1"></i>';
+                }
+                if (opt.isSelected && opt.isCorrect) {
+                    optClass = 'correct';
+                    optIcon = '<i class="fas fa-check-double text-success me-1"></i>';
+                }
+                html += `<div class="quiz-option-label ${optClass}" style="cursor:default;">${optIcon}<span>${escapeHtml(opt.optionText)}</span></div>`;
+            });
+
+            if (qr.explanation) {
+                html += `<div class="alert alert-info mt-2 mb-0 py-2"><small><i class="fas fa-lightbulb me-1"></i>${escapeHtml(qr.explanation)}</small></div>`;
+            }
+            html += `</div></div></div>`;
+        });
+
+        document.getElementById('quizBody').innerHTML = html;
+        document.getElementById('submitQuizBtn').style.display = 'none';
+
+        // Update quiz button in sidebar
+        if (result.passed) {
+            document.querySelectorAll('.quiz-btn-module').forEach(btn => {
+                if (btn.getAttribute('data-quiz-id') == currentQuizId) {
+                    btn.classList.add('passed');
+                    btn.querySelector('i').className = 'fas fa-check-circle';
+                }
+            });
+            // Cập nhật progress bar (bao gồm quiz đã pass)
+            updateProgress();
+        }
+
+        // Update footer with retry button
+        const footer = document.getElementById('quizFooter');
+        footer.innerHTML = `
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            ${!result.passed ? '<button type="button" class="btn btn-warning" onclick="retryQuiz()"><i class="fas fa-redo me-1"></i>Làm lại</button>' : ''}
+        `;
+    }
+
+    function retryQuiz() {
+        if (currentQuizData) {
+            renderQuiz(currentQuizData);
+        }
     }
 </script>
 </body>
