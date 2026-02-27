@@ -4,6 +4,324 @@
       layout:decorate="~{layout}">
 <head>
     <title th:text="${title}">AI Tools</title>
+    <style>
+        /* ====== RAG Chat Styles ====== */
+        .rag-chat-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 2px;
+        }
+        .rag-chat-inner {
+            background: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        .rag-chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 24px;
+        }
+        .rag-chat-header h5 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        .rag-chat-header .badge {
+            background: rgba(255,255,255,0.2) !important;
+            backdrop-filter: blur(10px);
+            font-weight: 500;
+        }
+        .rag-chat-body {
+            padding: 24px;
+        }
+
+        /* Chat Messages */
+        .rag-messages {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            min-height: 120px;
+        }
+        .rag-msg {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 10px;
+        }
+        .rag-msg.user {
+            flex-direction: row-reverse;
+        }
+        .rag-msg-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .rag-msg.user .rag-msg-avatar {
+            background: #667eea;
+            color: white;
+        }
+        .rag-msg.assistant .rag-msg-avatar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .rag-msg-bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .rag-msg.user .rag-msg-bubble {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .rag-msg.assistant .rag-msg-bubble {
+            background: white;
+            color: #333;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* Typing indicator */
+        .rag-typing {
+            display: flex;
+            gap: 4px;
+            padding: 8px 16px;
+        }
+        .rag-typing span {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: ragBounce 1.4s infinite ease-in-out;
+        }
+        .rag-typing span:nth-child(1) { animation-delay: -0.32s; }
+        .rag-typing span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes ragBounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Input area */
+        .rag-input-area {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .rag-input-area textarea {
+            flex: 1;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            resize: none;
+            transition: border-color 0.2s;
+            font-size: 0.95rem;
+        }
+        .rag-input-area textarea:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        .rag-send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+        .rag-send-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+        }
+        .rag-send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Intent & Metadata Badges */
+        .rag-info-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            padding: 12px;
+            background: #f0f4ff;
+            border-radius: 10px;
+        }
+        .rag-info-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .rag-info-badge.intent {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .rag-info-badge.confidence {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .rag-info-badge.context {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        .rag-info-badge.session {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        /* Quick Actions */
+        .rag-quick-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .rag-quick-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #555;
+        }
+        .rag-quick-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Course cards in chat */
+        .rag-msg-bubble .chat-course-results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .rag-msg-bubble .course-card-chat {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            width: calc(50% - 6px);
+            min-width: 240px;
+            transition: transform 0.2s;
+        }
+        .rag-msg-bubble .course-card-chat:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .rag-msg-bubble .course-card-image {
+            position: relative;
+            height: 120px;
+            overflow: hidden;
+        }
+        .rag-msg-bubble .course-card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .rag-msg-bubble .course-card-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(102,126,234,0.9);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+        }
+        .rag-msg-bubble .course-card-content {
+            padding: 10px;
+        }
+        .rag-msg-bubble .course-card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+            color: #1a1a2e;
+        }
+        .rag-msg-bubble .course-card-instructor {
+            font-size: 0.8rem;
+            color: #666;
+            margin: 0 0 6px 0;
+        }
+        .rag-msg-bubble .course-card-stats {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .rag-msg-bubble .course-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .rag-msg-bubble .course-card-price {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #e53e3e;
+        }
+        .rag-msg-bubble .course-card-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .rag-msg-bubble .course-card-actions a {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-decoration: none;
+            color: white;
+        }
+        .rag-msg-bubble .btn-course-detail {
+            background: #667eea;
+        }
+        .rag-msg-bubble .btn-course-buy {
+            background: #e53e3e;
+        }
+
+        /* Chat support footer in bubble */
+        .rag-msg-bubble .chat-support-footer {
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .rag-msg-bubble .chat-response-header {
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        .rag-msg-bubble .chat-hint {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #555;
+        }
+        .rag-msg-bubble .chat-ai-response p {
+            margin-bottom: 8px;
+        }
+    </style>
 </head>
 <body>
 <div layout:fragment="content" class="container py-4">
@@ -86,72 +404,55 @@
         </div>
     </div>
 
-    <!-- RAG Chat Section -->
+    <!-- RAG Smart Chat Section -->
     <div class="row g-4 mt-2">
         <div class="col-12">
-            <div class="admin-card p-4">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <h5 class="fw-bold mb-0">🤖 RAG Smart Chat</h5>
-                    <span class="badge bg-primary">Tìm kiếm thông minh với Vector Store</span>
-                </div>
-
-                <div class="alert alert-info">
-                    <strong>💡 Hệ thống RAG (Retrieval-Augmented Generation):</strong>
-                    <ul class="mb-0 mt-2">
-                        <li>Tự động phân loại ý định câu hỏi (tìm khóa học, giá cả, gợi ý, chính sách...)</li>
-                        <li>Tìm kiếm ngữ cảnh phù hợp từ database qua Vector Embedding</li>
-                        <li>Sinh câu trả lời chính xác dựa trên dữ liệu thực tế</li>
-                        <li>Lưu lịch sử chat theo session</li>
-                    </ul>
-                </div>
-
-                <div class="row g-3">
-                    <div class="col-md-8">
-                        <label class="form-label fw-bold">Câu hỏi của bạn</label>
-                        <textarea id="ragQuestion" class="form-control" rows="3" placeholder="Ví dụ: Tôi muốn học lập trình web, có khóa học nào phù hợp?"></textarea>
-                        <div class="form-text">
-                            Bạn có thể hỏi về: khóa học, giá cả, giảm giá, đăng ký, giảng viên, chủ đề...
+            <div class="rag-chat-container">
+                <div class="rag-chat-inner">
+                    <div class="rag-chat-header">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h5>🤖 RAG Smart Chat - AI Trợ lý Course Shop</h5>
+                            <span class="badge">Powered by Gemini + Metadata RAG</span>
                         </div>
+                        <p class="mb-0 mt-1 small opacity-75">Hỏi đáp thông minh dựa trên dữ liệu thực từ hệ thống</p>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Session ID (tùy chọn)</label>
-                        <input id="ragSessionId" type="text" class="form-control" placeholder="Auto-generated" readonly />
-                        <div class="form-text">Tự động tạo để lưu lịch sử chat</div>
-                        <button id="ragNewSessionBtn" class="btn btn-outline-secondary btn-sm mt-2 w-100">Tạo Session Mới</button>
-                    </div>
-                </div>
 
-                <div class="mt-3">
-                    <button id="ragChatBtn" class="btn btn-primary btn-lg">
-                        <i class="bi bi-chat-dots"></i> Gửi câu hỏi
-                    </button>
-                    <button id="ragClearBtn" class="btn btn-outline-secondary btn-lg ms-2">
-                        <i class="bi bi-trash"></i> Xóa kết quả
-                    </button>
-                </div>
-
-                <hr class="my-4" />
-
-                <div id="ragResultContainer" style="display: none;">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">🎯 Phân loại ý định</label>
-                            <div id="ragIntent" class="p-3 bg-light rounded border"></div>
+                    <div class="rag-chat-body">
+                        <!-- Quick Actions -->
+                        <div class="rag-quick-actions">
+                            <button class="rag-quick-btn" onclick="ragQuickAsk('Tìm khóa học Java')">🔍 Tìm khóa Java</button>
+                            <button class="rag-quick-btn" onclick="ragQuickAsk('Gợi ý khóa học cho người mới')">💡 Gợi ý cho newbie</button>
+                            <button class="rag-quick-btn" onclick="ragQuickAsk('Có khóa học nào dưới 500k không?')">💰 Dưới 500k</button>
+                            <button class="rag-quick-btn" onclick="ragQuickAsk('Hướng dẫn đăng ký khóa học')">📝 Cách đăng ký</button>
+                            <button class="rag-quick-btn" onclick="ragQuickAsk('Course Shop là gì?')">ℹ️ Về Course Shop</button>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">📊 Metadata</label>
-                            <div id="ragMetadata" class="p-3 bg-light rounded border small"></div>
+
+                        <!-- Messages -->
+                        <div id="ragMessages" class="rag-messages">
+                            <div class="rag-msg assistant">
+                                <div class="rag-msg-avatar">🤖</div>
+                                <div class="rag-msg-bubble">
+                                    <p>👋 <strong>Xin chào!</strong> Tôi là trợ lý AI của Course Shop.</p>
+                                    <p>Tôi có thể giúp bạn tìm kiếm khóa học, tư vấn giá cả, hướng dẫn đăng ký, và nhiều hơn nữa! Hãy hỏi tôi bất cứ điều gì nhé 😊</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mt-3">
-                        <label class="form-label fw-bold">💬 Câu trả lời</label>
-                        <div id="ragAnswer" class="p-4 bg-white rounded border" style="white-space: pre-wrap; min-height: 120px;"></div>
-                    </div>
+                        <!-- Info Bar (hidden initially) -->
+                        <div id="ragInfoBar" class="rag-info-bar" style="display: none;">
+                            <span id="ragIntentBadge" class="rag-info-badge intent"></span>
+                            <span id="ragConfidenceBadge" class="rag-info-badge confidence"></span>
+                            <span id="ragContextBadge" class="rag-info-badge context"></span>
+                            <span id="ragSessionBadge" class="rag-info-badge session"></span>
+                        </div>
 
-                    <div class="mt-3">
-                        <label class="form-label fw-bold">🔍 Ngữ cảnh được truy xuất</label>
-                        <pre id="ragContext" class="p-3 bg-light rounded border small" style="white-space: pre-wrap; max-height: 200px; overflow-y: auto;"></pre>
+                        <!-- Input -->
+                        <div class="rag-input-area mt-3">
+                            <textarea id="ragQuestion" rows="2" placeholder="Nhập câu hỏi... (Ctrl+Enter để gửi)"></textarea>
+                            <button id="ragSendBtn" class="rag-send-btn" onclick="sendRagMessage()">
+                                <i class="bi bi-send"></i> Gửi
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -159,6 +460,7 @@
     </div>
 
     <script>
+        // ====== Utility Functions ======
         async function getJson(url) {
             const res = await fetch(url);
             if (!res.ok) {
@@ -195,6 +497,7 @@
             }
         }
 
+        // ====== AI Chat & Quiz (existing) ======
         async function loadCourses() {
             const courses = await getJson('/api/ai/courses');
             fillSelect(document.getElementById('courseSelect'), courses, '-- Chọn khóa học --');
@@ -265,122 +568,137 @@
             }
         });
 
-        // ====== RAG Chat Implementation ======
-        let currentSessionId = generateSessionId();
-        document.getElementById('ragSessionId').value = currentSessionId;
+        // ====== RAG Smart Chat ======
+        let ragSessionId = null;
 
-        function generateSessionId() {
-            return 'session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+        const intentLabels = {
+            'COURSE_SEARCH': '🔍 Tìm kiếm khóa học',
+            'COURSE_RECOMMEND': '💡 Gợi ý khóa học',
+            'PRICING_INFO': '💰 Thông tin giá',
+            'DISCOUNT_POLICY': '🎁 Chính sách giảm giá',
+            'ENROLLMENT_INFO': '📝 Đăng ký',
+            'PLATFORM_INFO': 'ℹ️ Thông tin nền tảng',
+            'GENERAL_CHAT': '💬 Trò chuyện chung'
+        };
+
+        function addMessage(role, content) {
+            const container = document.getElementById('ragMessages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `rag-msg ${role}`;
+
+            const avatar = document.createElement('div');
+            avatar.className = 'rag-msg-avatar';
+            avatar.textContent = role === 'user' ? '👤' : '🤖';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'rag-msg-bubble';
+            bubble.innerHTML = content;
+
+            msgDiv.appendChild(avatar);
+            msgDiv.appendChild(bubble);
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
         }
 
-        // New Session Button
-        document.getElementById('ragNewSessionBtn').addEventListener('click', () => {
-            currentSessionId = generateSessionId();
-            document.getElementById('ragSessionId').value = currentSessionId;
-            document.getElementById('ragQuestion').value = '';
-            document.getElementById('ragResultContainer').style.display = 'none';
-            alert('✅ Đã tạo session mới: ' + currentSessionId);
-        });
+        function addTypingIndicator() {
+            const container = document.getElementById('ragMessages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'rag-msg assistant';
+            msgDiv.id = 'ragTyping';
 
-        // Clear Result Button
-        document.getElementById('ragClearBtn').addEventListener('click', () => {
-            document.getElementById('ragResultContainer').style.display = 'none';
-            document.getElementById('ragAnswer').textContent = '';
-            document.getElementById('ragContext').textContent = '';
-            document.getElementById('ragIntent').textContent = '';
-            document.getElementById('ragMetadata').textContent = '';
-        });
+            const avatar = document.createElement('div');
+            avatar.className = 'rag-msg-avatar';
+            avatar.textContent = '🤖';
 
-        // RAG Chat Button
-        document.getElementById('ragChatBtn').addEventListener('click', async () => {
-            const question = document.getElementById('ragQuestion').value.trim();
-            if (!question) {
-                alert('⚠️ Vui lòng nhập câu hỏi!');
-                return;
-            }
+            const bubble = document.createElement('div');
+            bubble.className = 'rag-msg-bubble';
+            bubble.innerHTML = '<div class="rag-typing"><span></span><span></span><span></span></div><span class="small text-muted">Đang phân tích và tìm kiếm...</span>';
 
-            const btn = document.getElementById('ragChatBtn');
+            msgDiv.appendChild(avatar);
+            msgDiv.appendChild(bubble);
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const el = document.getElementById('ragTyping');
+            if (el) el.remove();
+        }
+
+        function updateInfoBar(response) {
+            const bar = document.getElementById('ragInfoBar');
+            bar.style.display = 'flex';
+
+            const intentLabel = intentLabels[response.intent] || response.intent || 'N/A';
+            document.getElementById('ragIntentBadge').textContent = '🎯 ' + intentLabel;
+
+            const conf = response.confidence != null ? (response.confidence * 100).toFixed(0) : 'N/A';
+            document.getElementById('ragConfidenceBadge').textContent = '📊 Confidence: ' + conf + '%';
+
+            const ctxCount = response.retrievedContext ? response.retrievedContext.length : 0;
+            document.getElementById('ragContextBadge').textContent = '📄 Context: ' + ctxCount + ' items';
+
+            document.getElementById('ragSessionBadge').textContent = '🔗 Session: ' + (response.sessionId || 'N/A');
+        }
+
+        async function sendRagMessage() {
+            const input = document.getElementById('ragQuestion');
+            const question = input.value.trim();
+            if (!question) return;
+
+            const btn = document.getElementById('ragSendBtn');
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+            input.value = '';
 
-            // Show result container with loading state
-            document.getElementById('ragResultContainer').style.display = 'block';
-            document.getElementById('ragAnswer').textContent = '⏳ Đang phân tích câu hỏi và tìm kiếm thông tin...';
-            document.getElementById('ragIntent').textContent = '⏳ Đang phân loại...';
-            document.getElementById('ragContext').textContent = '⏳ Đang truy xuất ngữ cảnh...';
-            document.getElementById('ragMetadata').textContent = '';
+            // Add user message
+            addMessage('user', question);
+
+            // Show typing indicator
+            addTypingIndicator();
 
             try {
                 const payload = {
-                    sessionId: currentSessionId,
-                    userMessage: question
+                    message: question,
+                    sessionId: ragSessionId
                 };
 
                 const response = await postJson('/api/rag/chat', payload);
 
-                // Display Intent
-                const intentBadges = {
-                    'COURSE_SEARCH': '🔍 Tìm kiếm khóa học',
-                    'COURSE_RECOMMEND': '💡 Gợi ý khóa học',
-                    'PRICING_INFO': '💰 Thông tin giá',
-                    'DISCOUNT_POLICY': '🎁 Chính sách giảm giá',
-                    'ENROLLMENT_INFO': '📝 Thông tin đăng ký',
-                    'PLATFORM_INFO': 'ℹ️ Thông tin nền tảng',
-                    'GENERAL_CHAT': '💬 Trò chuyện chung'
-                };
-                const intentLabel = intentBadges[response.intent] || response.intent;
-                document.getElementById('ragIntent').innerHTML = `
-                    <span class="badge bg-success fs-6">${intentLabel}</span>
-                    <div class="mt-2 small text-muted">Confidence: ${(response.confidence * 100).toFixed(1)}%</div>
-                `;
+                // Remove typing indicator
+                removeTypingIndicator();
 
-                // Display Answer
-                document.getElementById('ragAnswer').innerHTML = `
-                    <div class="mb-2 fw-bold text-primary">💬 Câu hỏi:</div>
-                    <div class="mb-3 fst-italic">${response.userMessage}</div>
-                    <div class="mb-2 fw-bold text-success">✨ Trả lời:</div>
-                    <div>${response.answer}</div>
-                `;
-
-                // Display Context
-                if (response.retrievedContext && response.retrievedContext.length > 0) {
-                    const contextHtml = response.retrievedContext
-                        .map((ctx, idx) => `<div class="mb-2"><strong>[${idx + 1}]</strong> ${ctx}</div>`)
-                        .join('\n');
-                    document.getElementById('ragContext').innerHTML = contextHtml;
-                } else {
-                    document.getElementById('ragContext').textContent = '(Không có ngữ cảnh cụ thể)';
+                // Update session ID
+                if (response.sessionId) {
+                    ragSessionId = response.sessionId;
                 }
 
-                // Display Metadata
-                const metadata = {
-                    'Timestamp': response.timestamp,
-                    'Session ID': response.sessionId,
-                    'Context Items': response.retrievedContext ? response.retrievedContext.length : 0
-                };
-                const metadataHtml = Object.entries(metadata)
-                    .map(([key, val]) => `<strong>${key}:</strong> ${val}`)
-                    .join('<br>');
-                document.getElementById('ragMetadata').innerHTML = metadataHtml;
+                // Add assistant response
+                if (response.success) {
+                    addMessage('assistant', response.answer || response.response || 'Không có phản hồi.');
+                    updateInfoBar(response);
+                } else {
+                    addMessage('assistant', '<div class="alert alert-danger mb-0">❌ Lỗi: ' + (response.message || 'Có lỗi xảy ra') + '</div>');
+                }
 
             } catch (e) {
-                document.getElementById('ragAnswer').innerHTML = `
-                    <div class="alert alert-danger mb-0">
-                        <strong>❌ Lỗi:</strong> ${e.message}
-                    </div>
-                `;
-                document.getElementById('ragIntent').textContent = 'N/A';
-                document.getElementById('ragContext').textContent = 'N/A';
+                removeTypingIndicator();
+                addMessage('assistant', '<div class="alert alert-danger mb-0">❌ Lỗi kết nối: ' + e.message + '</div>');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-chat-dots"></i> Gửi câu hỏi';
+                input.focus();
             }
-        });
+        }
 
-        // Enable Enter key to send question
+        function ragQuickAsk(question) {
+            document.getElementById('ragQuestion').value = question;
+            sendRagMessage();
+        }
+
+        // Enter key to send
         document.getElementById('ragQuestion').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && e.ctrlKey) {
-                document.getElementById('ragChatBtn').click();
+                e.preventDefault();
+                sendRagMessage();
             }
         });
     </script>

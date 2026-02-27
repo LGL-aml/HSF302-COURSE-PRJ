@@ -6,19 +6,27 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Service for classifying user intent using rule-based keyword matching
+ * Service for classifying user intent and extracting metadata from user messages.
+ * 
+ * Supports:
+ * - Intent classification (COURSE_SEARCH, PRICING_INFO, etc.)
+ * - Price extraction: "200k", "dưới 500k", "từ 100k đến 500k", "1 triệu"
+ * - Keyword extraction: technology names, Vietnamese course keywords
+ * - Target audience: beginner, intermediate, advanced
+ * - Quantity: "top 5", "3 khóa học"
  */
 @Service
 @Slf4j
 public class IntentClassifierService {
 
-
     /**
-     * Classify user intent using rule-based keyword matching (no external API needed)
+     * Classify user intent and extract all metadata from the message.
      */
     public IntentResult classifyIntent(String userMessage) {
         log.info("Classifying intent for: {}", userMessage);
@@ -26,105 +34,195 @@ public class IntentClassifierService {
         String lowerMessage = userMessage.toLowerCase().trim();
         IntentResult.IntentResultBuilder builder = IntentResult.builder().rawQuery(userMessage);
         
-        // Extract price information
+        // Extract metadata from message
         extractPriceInfo(lowerMessage, builder);
-        
-        // Extract quantity
         extractQuantity(lowerMessage, builder);
-        
-        // Extract target audience
         extractTargetAudience(lowerMessage, builder);
         
-        // Extract keyword (course name/topic)
         String keyword = extractKeyword(lowerMessage);
         if (keyword != null) {
             builder.keyword(keyword);
         }
         
-        // Determine intent based on keywords
+        // Determine intent
         IntentType intent = determineIntent(lowerMessage);
         builder.intent(intent);
         
-        log.info("Classified intent: {} for message: {}", intent, userMessage);
-        return builder.build();
+        IntentResult result = builder.build();
+        log.info("Intent: {} | Keyword: {} | MaxPrice: {} | MinPrice: {} | Audience: {}",
+                result.getIntent(), result.getKeyword(), result.getMaxPrice(), 
+                result.getMinPrice(), result.getTargetAudience());
+        return result;
     }
     
+    // ==================== INTENT DETERMINATION ====================
+    
     private IntentType determineIntent(String message) {
-        // Priority order: Check specific intents first, then general
+        // Priority order: most specific first → least specific last
         
-        // PRICING_INFO: giá, chi phí, miễn phí, phí, tiền, dưới Xk, trên Xk, giảm giá, khuyến mãi
-        if (containsAny(message, "giá", "chi phí", "miễn phí", "bao nhiêu tiền", "phí", "tốn", "trả", 
-                        "dưới", "trên", "rẻ", "mắc", "giảm giá", "khuyến mãi", "voucher", "mã giảm", 
-                        "sale", "discount", "coupon", "ưu đãi")) {
+        // 1. DISCOUNT_POLICY
+        if (containsAny(message, "giảm giá", "khuyến mãi", "voucher", "mã giảm", 
+                        "sale", "discount", "coupon", "ưu đãi", "khuyến mại", "promotion")) {
+            return IntentType.DISCOUNT_POLICY;
+        }
+        
+        // 2. PRICING_INFO: explicit price questions
+        if (containsAny(message, "bao nhiêu tiền", "chi phí", "miễn phí", "giá bao nhiêu")) {
             return IntentType.PRICING_INFO;
         }
         
-        // ENROLLMENT_INFO: đăng ký, thanh toán, chứng chỉ, ghi danh
-        if (containsAny(message, "đăng ký", "ghi danh", "thanh toán", "chứng chỉ", "certificate", "enroll", "payment", "đăng kí")) {
+        // 3. PRICING_INFO: price filter keywords (dưới Xk, trên Xk, rẻ, mắc)
+        if (containsAny(message, "dưới", "trên", "rẻ", "mắc", "tối đa", "tối thiểu")) {
+            return IntentType.PRICING_INFO;
+        }
+        
+        // 4. ENROLLMENT_INFO
+        if (containsAny(message, "đăng ký", "ghi danh", "thanh toán", "chứng chỉ", 
+                        "certificate", "enroll", "payment", "đăng kí", "cách mua")) {
             return IntentType.ENROLLMENT_INFO;
         }
         
-        // PLATFORM_INFO: nền tảng, giảng viên, hỗ trợ, support
-        if (containsAny(message, "nền tảng", "platform", "giảng viên", "lecturer", "hỗ trợ", "support", "liên hệ", "contact")) {
+        // 5. PLATFORM_INFO
+        if (containsAny(message, "nền tảng", "platform", "giảng viên", "lecturer", 
+                        "hỗ trợ", "support", "liên hệ", "contact", "course shop là gì")) {
             return IntentType.PLATFORM_INFO;
         }
         
-        // COURSE_RECOMMEND: gợi ý, recommend, suggest, nên học
-        if (containsAny(message, "gợi ý", "recommend", "suggest", "nên học", "phù hợp", "tốt nhất", "best", "top")) {
+        // 6. GENERAL_CHAT (FREE mode) — MUST check BEFORE COURSE_SEARCH/RECOMMEND
+        //    Đây là câu hỏi kiến thức, lộ trình, career, không phải tìm khóa cụ thể
+        if (containsAny(message, "lộ trình", "roadmap", "career", "hướng đi", "con đường",
+                        "bắt đầu từ đâu", "nên bắt đầu", "học gì trước", "thứ tự học",
+                        "là gì", "so sánh", "khác nhau", "giải thích", "tại sao",
+                        "cách học", "kinh nghiệm", "mẹo", "tips", "tài liệu",
+                        "sự nghiệp", "lương", "salary", "công việc", "job",
+                        "xu hướng", "trend", "tương lai", "triển vọng")) {
+            return IntentType.GENERAL_CHAT;
+        }
+        
+        // 7. COURSE_RECOMMEND: "nên học khóa nào", "gợi ý khóa"
+        if (containsAny(message, "gợi ý", "recommend", "suggest", "nên học", "phù hợp", 
+                        "tốt nhất", "best", "top", "phổ biến", "hot",
+                        "học khóa nào", "khóa nào hay")) {
             return IntentType.COURSE_RECOMMEND;
         }
         
-        // COURSE_SEARCH: tìm, search, có khóa, learn, học
-        if (containsAny(message, "tìm", "search", "có khóa", "khóa học", "course", "học", "learn", "java", "python", "react", "angular", "spring")) {
+        // 8. Price mention in message → PRICING_INFO (e.g., "200k mua gì", "500k được gì")
+        if (hasPriceMention(message)) {
+            return IntentType.PRICING_INFO;
+        }
+        
+        // 9. "giá" or "mua" alone → PRICING_INFO
+        if (containsAny(message, "giá", "mua")) {
+            return IntentType.PRICING_INFO;
+        }
+        
+        // 10. COURSE_SEARCH: tìm/kiếm/khóa học cụ thể
+        if (containsAny(message, "tìm", "search", "có khóa", "khóa học", "course", "kiếm")) {
             return IntentType.COURSE_SEARCH;
         }
         
-        // Default to GENERAL_CHAT
+        // 11. If has tech keyword + "học" → COURSE_SEARCH (e.g., "học java", "học python")
+        if (hasTechKeyword(message) && message.contains("học")) {
+            return IntentType.COURSE_SEARCH;
+        }
+        
+        // 12. If only has tech keyword without "học" → could be general question
+        if (hasTechKeyword(message)) {
+            return IntentType.GENERAL_CHAT;
+        }
+        
         return IntentType.GENERAL_CHAT;
     }
     
+    // ==================== KEYWORD EXTRACTION ====================
+    
     private String extractKeyword(String message) {
-        // Common course topics/technologies
-        String[] topics = {
-            "java", "python", "javascript", "react", "angular", "vue", "spring", "node",
-            "docker", "kubernetes", "aws", "azure", "devops", "sql", "mysql", "mongodb",  
-            "api", "rest", "microservice", "frontend", "backend", "fullstack", "web", "mobile",
-            "android", "ios", "flutter", "machine learning", "data science", "ai", "blockchain"
+        // Technology/topic keywords (check these first - more specific)
+        String[] techTopics = {
+            "java", "python", "javascript", "typescript", "react", "angular", "vue", 
+            "spring", "spring boot", "node", "nodejs", "node.js",
+            "docker", "kubernetes", "aws", "azure", "gcp", "devops", "ci/cd",
+            "sql", "mysql", "mongodb", "postgresql", "redis",
+            "api", "rest", "restful", "graphql", "microservice", "microservices",
+            "frontend", "backend", "fullstack", "full-stack", "full stack",
+            "web", "mobile", "android", "ios", "flutter", "react native",
+            "machine learning", "deep learning", "data science", "ai", "nlp",
+            "blockchain", "crypto", "solidity",
+            "c#", "c++", ".net", "dotnet", "php", "laravel", "ruby", "golang", "go", "rust",
+            "html", "css", "sass", "tailwind", "bootstrap",
+            "git", "linux", "unity", "unreal", "game",
+            "figma", "photoshop", "design", "ui/ux", "ux", "ui",
+            // Vietnamese tech terms
+            "lập trình", "cơ sở dữ liệu", "trí tuệ nhân tạo", "bảo mật", "mạng",
+            "phần mềm", "ứng dụng", "website", "app"
         };
         
-        for (String topic : topics) {
+        // Match longest keyword first (e.g., "spring boot" before "spring")
+        String found = null;
+        for (String topic : techTopics) {
             if (message.contains(topic)) {
-                return topic;
+                if (found == null || topic.length() > found.length()) {
+                    found = topic;
+                }
             }
         }
+        if (found != null) return found;
         
-        // Skip price-related and filter-related words
-        String[] skipWords = {"dưới", "trên", "từ", "đến", "tối", "đa", "thiểu", "giá", "rẻ", "mắc", 
-                              "miễn", "phí", "k", "triệu", "nghìn", "ngàn"};
+        // Try to extract Vietnamese keyword after "khóa học"
+        String[] skipWords = {"dưới", "trên", "từ", "đến", "tối", "đa", "thiểu", "giá", 
+                              "rẻ", "mắc", "miễn", "phí", "k", "triệu", "nghìn", "ngàn",
+                              "nào", "gì", "nên", "có", "cho", "về", "của", "với", "và",
+                              "tốt", "nhất", "hot", "mới", "cơ", "bản"};
         
-        // Extract Vietnamese keywords (e.g., "khóa học Java")
-        Pattern vnPattern = Pattern.compile("khóa học\\s+(\\w+)", Pattern.CASE_INSENSITIVE);
+        // Pattern: "khóa học <keyword>"
+        Pattern vnPattern = Pattern.compile("khóa\\s+học\\s+(\\S+)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = vnPattern.matcher(message);
         if (matcher.find()) {
             String potentialKeyword = matcher.group(1).toLowerCase();
-            
-            // Check if it's not a skip word
-            for (String skip : skipWords) {
-                if (potentialKeyword.equals(skip)) {
-                    return null;  // Don't use price/filter words as course keywords
+            // Remove price suffix if attached (e.g., "java200k" shouldn't happen but safety)
+            potentialKeyword = potentialKeyword.replaceAll("\\d+[kK]?$", "").trim();
+            if (!potentialKeyword.isEmpty()) {
+                for (String skip : skipWords) {
+                    if (potentialKeyword.equals(skip)) return null;
+                }
+                return potentialKeyword;
+            }
+        }
+        
+        // Pattern: "học <keyword>"  
+        Pattern learnPattern = Pattern.compile("(?:học|tìm|kiếm|tìm kiếm)\\s+(\\S+)", Pattern.CASE_INSENSITIVE);
+        matcher = learnPattern.matcher(message);
+        if (matcher.find()) {
+            String potentialKeyword = matcher.group(1).toLowerCase()
+                    .replaceAll("\\d+[kK]?$", "").trim();
+            if (!potentialKeyword.isEmpty()) {
+                for (String skip : skipWords) {
+                    if (potentialKeyword.equals(skip)) return null;
+                }
+                // Only return if it looks like a meaningful keyword (not a common word)
+                if (potentialKeyword.length() >= 2) {
+                    return potentialKeyword;
                 }
             }
-            
-            return potentialKeyword;
         }
         
         return null;
     }
     
+    // ==================== PRICE EXTRACTION ====================
+    
+    /**
+     * Extract price information from message.
+     * 
+     * BUG FIX: When a price is mentioned without explicit context words (dưới/trên),
+     * DEFAULT to maxPrice. E.g., "khóa học java 200k" → maxPrice = 200,000
+     * This is the most natural interpretation: user wants courses UP TO that price.
+     */
     private void extractPriceInfo(String message, IntentResult.IntentResultBuilder builder) {
-        // Extract price ranges: "dưới 500k", "từ 100k đến 500k", "dưới 1 triệu"
         Pattern pricePattern = Pattern.compile("(\\d+)\\s*(k|triệu|tr|nghìn|ngàn)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = pricePattern.matcher(message);
+        
+        List<BigDecimal> prices = new ArrayList<>();
         
         while (matcher.find()) {
             String number = matcher.group(1);
@@ -136,49 +234,64 @@ public class IntentClassifierService {
             } else if (unit.contains("triệu") || unit.equals("tr")) {
                 price = price.multiply(new BigDecimal("1000000"));
             }
-            
-            // Determine if it's max or min based on context
-            if (message.contains("dưới") || message.contains("tối đa") || message.contains("max")) {
-                builder.maxPrice(price);
-            } else if (message.contains("trên") || message.contains("tối thiểu") || message.contains("min")) {
-                builder.minPrice(price);
-            } else if (message.contains("từ") && message.contains("đến")) {
-                // Range detected
-                builder.minPrice(price);
-                if (matcher.find()) {
-                    String number2 = matcher.group(1);
-                    String unit2 = matcher.group(2).toLowerCase();
-                    BigDecimal maxPrice = new BigDecimal(number2);
-                    if (unit2.equals("k") || unit2.contains("nghìn") || unit2.contains("ngàn")) {
-                        maxPrice = maxPrice.multiply(new BigDecimal("1000"));
-                    } else if (unit2.contains("triệu") || unit2.equals("tr")) {
-                        maxPrice = maxPrice.multiply(new BigDecimal("1000000"));
-                    }
-                    builder.maxPrice(maxPrice);
-                }
-                break;
-            }
+            prices.add(price);
+        }
+        
+        if (prices.isEmpty()) return;
+        
+        // Determine context for price assignment
+        boolean hasUnder = containsAny(message, "dưới", "tối đa", "max", "không quá", "<=", "nhỏ hơn");
+        boolean hasOver = containsAny(message, "trên", "tối thiểu", "min", "ít nhất", ">=", "lớn hơn", "từ");
+        boolean hasRange = containsAny(message, "đến") && (containsAny(message, "từ") || prices.size() >= 2);
+        
+        if (hasRange && prices.size() >= 2) {
+            // Range: "từ 100k đến 500k"
+            builder.minPrice(prices.get(0));
+            builder.maxPrice(prices.get(1));
+            log.info("Price range detected: {} - {}", prices.get(0), prices.get(1));
+        } else if (hasUnder) {
+            // Under: "dưới 500k"
+            builder.maxPrice(prices.get(0));
+            log.info("Max price detected: {}", prices.get(0));
+        } else if (hasOver) {
+            // Over: "trên 200k"
+            builder.minPrice(prices.get(0));
+            log.info("Min price detected: {}", prices.get(0));
+        } else {
+            // DEFAULT: No explicit context → treat as maxPrice
+            // "khóa học java 200k" → user wants courses up to 200k
+            builder.maxPrice(prices.get(0));
+            log.info("Price without context → defaulting to maxPrice: {}", prices.get(0));
         }
     }
     
+    // ==================== QUANTITY & AUDIENCE ====================
+    
     private void extractQuantity(String message, IntentResult.IntentResultBuilder builder) {
-        // Extract quantity: "5 khóa học", "top 10", "3 course"
         Pattern qtyPattern = Pattern.compile("(\\d+)\\s*(khóa|course|top)", Pattern.CASE_INSENSITIVE);
         Matcher matcher = qtyPattern.matcher(message);
+        if (matcher.find()) {
+            builder.quantity(Integer.parseInt(matcher.group(1)));
+        }
+        // Also check "top X"
+        Pattern topPattern = Pattern.compile("top\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
+        matcher = topPattern.matcher(message);
         if (matcher.find()) {
             builder.quantity(Integer.parseInt(matcher.group(1)));
         }
     }
     
     private void extractTargetAudience(String message, IntentResult.IntentResultBuilder builder) {
-        if (containsAny(message, "beginner", "cơ bản", "mới bắt đầu", "newbie", "người mới")) {
+        if (containsAny(message, "beginner", "cơ bản", "mới bắt đầu", "newbie", "người mới", "nhập môn")) {
             builder.targetAudience("beginner");
-        } else if (containsAny(message, "intermediate", "trung cấp", "nâng cao")) {
+        } else if (containsAny(message, "intermediate", "trung cấp", "trung bình")) {
             builder.targetAudience("intermediate");
-        } else if (containsAny(message, "advanced", "chuyên sâu", "expert", "pro")) {
+        } else if (containsAny(message, "advanced", "nâng cao", "chuyên sâu", "expert", "pro")) {
             builder.targetAudience("advanced");
         }
     }
+    
+    // ==================== HELPERS ====================
     
     private boolean containsAny(String message, String... keywords) {
         for (String keyword : keywords) {
@@ -187,5 +300,20 @@ public class IntentClassifierService {
             }
         }
         return false;
+    }
+    
+    private boolean hasPriceMention(String message) {
+        return Pattern.compile("\\d+\\s*(k|triệu|tr|nghìn|ngàn)", Pattern.CASE_INSENSITIVE)
+                .matcher(message).find();
+    }
+    
+    private boolean hasCourseMention(String message) {
+        return containsAny(message, "khóa", "course", "học", "learn");
+    }
+    
+    private boolean hasTechKeyword(String message) {
+        String[] techs = {"java", "python", "javascript", "react", "angular", "spring", 
+                          "docker", "aws", "sql", "web", "mobile", "ai", "c#", "php"};
+        return containsAny(message, techs);
     }
 }
