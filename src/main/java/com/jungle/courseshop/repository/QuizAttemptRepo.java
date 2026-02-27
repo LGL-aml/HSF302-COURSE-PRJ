@@ -13,4 +13,5 @@ public interface QuizAttemptRepo extends JpaRepository<QuizAttempt, Long> {
     Optional<QuizAttempt> findTopByUserAndQuizOrderByCompletedAtDesc(User user, Quiz quiz);
     boolean existsByUserAndQuizAndPassedTrue(User user, Quiz quiz);
     long countByUserAndQuiz(User user, Quiz quiz);
+    void deleteByQuizIn(List<Quiz> quizzes);
 }

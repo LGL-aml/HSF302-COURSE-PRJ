@@ -22,7 +22,7 @@ public class CourseModule {
     private String title;
 
 
-    @OneToMany(mappedBy = "courseModule", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "courseModule", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CourseVideo> videos = new ArrayList<>();
 
     @OneToOne(mappedBy = "courseModule", cascade = CascadeType.ALL, orphanRemoval = true)

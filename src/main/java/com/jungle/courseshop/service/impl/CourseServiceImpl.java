@@ -41,6 +41,7 @@ public class CourseServiceImpl implements CourseService {
     private final ObjectMapper objectMapper;
     private final TopicRepo topicRepo;
     private final QuizRepo quizRepo;
+    private final QuizAttemptRepo quizAttemptRepo;
 
 
     @Transactional
@@ -155,10 +156,29 @@ public class CourseServiceImpl implements CourseService {
 
         // Xử lý cập nhật modules và videos nếu có
         if (request.getModules() != null) {
-            // Xóa toàn bộ module và video cũ
-            List<CourseModule> oldModules = moduleRepository.findByCourse_ActiveTrueOrderByOrderIndexAsc()
-                .stream().filter(m -> m.getCourse().getId().equals(course.getId())).toList();
+            // Lấy toàn bộ module cũ
+            List<CourseModule> oldModules = moduleRepository.findByCourseOrderByOrderIndexAsc(course);
+
+            // Xóa watched_video records trước khi xóa videos
+            List<CourseVideo> allOldVideos = oldModules.stream()
+                    .flatMap(m -> m.getVideos().stream())
+                    .collect(Collectors.toList());
+            if (!allOldVideos.isEmpty()) {
+                watchedVideoRepository.deleteByVideoIn(allOldVideos);
+            }
+
+            // Xóa quiz_attempt records trước khi xóa quizzes
+            List<Quiz> allOldQuizzes = oldModules.stream()
+                    .filter(m -> m.getQuiz() != null)
+                    .map(CourseModule::getQuiz)
+                    .collect(Collectors.toList());
+            if (!allOldQuizzes.isEmpty()) {
+                quizAttemptRepo.deleteByQuizIn(allOldQuizzes);
+            }
+
+            // Xóa toàn bộ module cũ (cascade sẽ xóa videos, quiz, questions, options)
             moduleRepository.deleteAll(oldModules);
+            moduleRepository.flush();
 
             // Tạo lại module và video mới
             List<CourseModuleRequest> moduleRequests = objectMapper.readValue(

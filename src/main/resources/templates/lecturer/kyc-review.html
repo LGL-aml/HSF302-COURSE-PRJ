@@ -282,18 +282,13 @@
                 <span class="step-text">Xác thực khuôn mặt</span>
             </div>
             <div class="step-line completed"></div>
-            <div class="step active">
-                <div class="step-number">3</div>
-                <span class="step-text">Xác nhận thông tin</span>
-            </div>
-            <div class="step-line"></div>
             <div class="step">
-                <div class="step-number">4</div>
+                <div class="step-number">3</div>
                 <span class="step-text">Hoàn tất</span>
             </div>
         </div>
 
-        <!-- Warning Box -->
+                <div class="step-number">4</div>
         <div class="warning-box">
             <div class="d-flex align-items-start">
                 <i class="fas fa-exclamation-triangle me-2 mt-1" style="color: #f59e0b;"></i>
@@ -308,18 +303,15 @@
                     <i class="fas fa-id-card"></i>
                     Thông tin từ CCCD
                     <span class="verified-badge ms-auto">
-                        <i class="fas fa-check-circle"></i> Đã xác thực eKYC
-                        <span th:if="${faceMatchProbability}">
-                            &nbsp;| Độ khớp khuôn mặt: <span th:text="${faceMatchProbability}"></span>%
-                        </span>
+                        <i class="fas fa-check-circle"></i> Đã xác thực
                     </span>
                 </h5>
 
                 <div class="row">
-                    <div class="col-md-6">
-                        <div class="info-row">
-                            <span class="info-label">Số CCCD:</span>
-                            <span class="info-value" th:text="*{identifyNumber}">012345678901</span>
+                        <i class="fas fa-check-circle"></i> Đã xác thực eKYC
+                        <span th:if="${faceMatchProbability}">
+                            &nbsp;| Độ khớp khuôn mặt: <span th:text="${faceMatchProbability}"></span>%
+                        </span>
                             <input type="hidden" th:field="*{identifyNumber}">
                         </div>
                         <div class="info-row">
@@ -438,7 +430,7 @@
             <!-- Back Button -->
             <div class="text-center mt-3">
                 <a th:href="@{/lecturer/kyc/upload}" class="btn btn-back">
-                    <i class="fas fa-arrow-left me-2"></i>Quay lại từ đầu
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại tải ảnh CCCD
                 </a>
             </div>
         </form>
@@ -446,7 +438,7 @@
 </div>
 
 <th:block layout:fragment="scripts">
-    <script>
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại từ đầu
         // Form validation
         document.getElementById('reviewForm').addEventListener('submit', function(e) {
             const bio = document.querySelector('textarea[name="bio"]').value;

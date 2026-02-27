@@ -36,6 +36,9 @@ public class Quiz {
     @OrderBy("orderIndex ASC")
     private List<QuizQuestion> questions = new ArrayList<>();
 
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuizAttempt> attempts = new ArrayList<>();
+
     private Boolean active = true;
 
     private LocalDateTime createdAt;

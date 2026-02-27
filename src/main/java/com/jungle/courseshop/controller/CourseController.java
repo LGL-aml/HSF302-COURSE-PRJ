@@ -147,7 +147,7 @@ public class CourseController {
         try {
             CourseResponse course = courseService.getCourseById(id);
             model.addAttribute("course", course);
-            model.addAttribute("courseId", id);  // Add courseId to model
+            model.addAttribute("courseId", id); // Add courseId to model
             model.addAttribute("existingCourse", course);
             model.addAttribute("topics", topicService.getAll());
             model.addAttribute("title", "Chỉnh sửa khóa học");
@@ -170,11 +170,39 @@ public class CourseController {
             model.addAttribute("error", "Lỗi khi upload ảnh hoặc xử lý dữ liệu");
         } catch (Exception e) {
             log.error("Error updating course", e);
-            model.addAttribute("error", "Không thể cập nhật khóa học");
+            model.addAttribute("error", e.getMessage() != null ? e.getMessage() : "Không thể cập nhật khóa học");
         }
-        model.addAttribute("topics", topicService.getAll());
+
+        List<Topic> topics = topicService.getAll();
+        model.addAttribute("topics", topics);
         model.addAttribute("courseId", id);
-        model.addAttribute("course", request);
+
+        try {
+            CourseResponse course = courseService.getCourseById(id);
+            if (request.getTitle() != null)
+                course.setTitle(request.getTitle());
+            if (request.getDescription() != null)
+                course.setDescription(request.getDescription());
+            if (request.getContent() != null)
+                course.setContent(request.getContent());
+            if (request.getPrice() != null)
+                course.setPrice(request.getPrice());
+            if (request.getDuration() != null)
+                course.setDuration(request.getDuration());
+
+            if (request.getTopicId() != null) {
+                topics.stream()
+                        .filter(t -> t.getId().equals(request.getTopicId()))
+                        .findFirst()
+                        .ifPresent(t -> course.setTopicName(t.getName()));
+            }
+
+            model.addAttribute("course", course);
+            model.addAttribute("existingCourse", course);
+        } catch (Exception ex) {
+            log.error("Could not load course back for error view", ex);
+        }
+
         return "lecturer/edit-course";
     }
 
