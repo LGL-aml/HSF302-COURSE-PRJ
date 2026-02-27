@@ -17,6 +17,7 @@ public class CourseModuleResponse {
     private String title;
     private List<VideoCourseResponse> videos;
     private Integer orderIndex;
+    private QuizResponse quiz; // Quiz của module (null nếu không có)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

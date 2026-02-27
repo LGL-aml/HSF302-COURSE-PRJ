@@ -18,5 +18,7 @@ public interface CourseEnrollmentService {
     List<CourseEnrollmentResponse> getEnrolledCourses();
 
     void markVideoAsWatched(Long videoId, boolean watchedStatus) throws MessagingException, UnsupportedEncodingException;
+
+    void recalculateProgress(Long courseId) throws MessagingException, UnsupportedEncodingException;
 }
 

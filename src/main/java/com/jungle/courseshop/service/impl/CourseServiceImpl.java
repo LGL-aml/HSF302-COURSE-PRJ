@@ -2,9 +2,7 @@ package com.jungle.courseshop.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jungle.courseshop.dto.request.CourseCreateRequest;
-import com.jungle.courseshop.dto.request.CourseModuleRequest;
-import com.jungle.courseshop.dto.request.CourseUpdateRequest;
+import com.jungle.courseshop.dto.request.*;
 import com.jungle.courseshop.dto.response.*;
 import com.jungle.courseshop.entity.*;
 import com.jungle.courseshop.exception.ResourceNotFoundException;
@@ -42,6 +40,7 @@ public class CourseServiceImpl implements CourseService {
     private final WatchedVideoRepo watchedVideoRepository;
     private final ObjectMapper objectMapper;
     private final TopicRepo topicRepo;
+    private final QuizRepo quizRepo;
 
 
     @Transactional
@@ -108,6 +107,15 @@ public class CourseServiceImpl implements CourseService {
                 modules.add(module);
             }
             moduleRepository.saveAll(modules);
+
+            // Tạo quiz cho từng module nếu có
+            for (int i = 0; i < moduleRequests.size(); i++) {
+                CourseModuleRequest moduleRequest = moduleRequests.get(i);
+                if (moduleRequest.getQuiz() != null && moduleRequest.getQuiz().getQuestions() != null
+                        && !moduleRequest.getQuiz().getQuestions().isEmpty()) {
+                    createQuizForModule(modules.get(i), moduleRequest.getQuiz());
+                }
+            }
         }
 
         return mapToCourseResponse(savedCourse, modules, currentUser);
@@ -175,6 +183,15 @@ public class CourseServiceImpl implements CourseService {
                 newModules.add(module);
             }
             moduleRepository.saveAll(newModules);
+
+            // Tạo quiz cho từng module mới nếu có
+            for (int i = 0; i < moduleRequests.size(); i++) {
+                CourseModuleRequest moduleRequest = moduleRequests.get(i);
+                if (moduleRequest.getQuiz() != null && moduleRequest.getQuiz().getQuestions() != null
+                        && !moduleRequest.getQuiz().getQuestions().isEmpty()) {
+                    createQuizForModule(newModules.get(i), moduleRequest.getQuiz());
+                }
+            }
         }
 
         Course savedCourse = courseRepository.save(course);
@@ -456,14 +473,86 @@ public class CourseServiceImpl implements CourseService {
                             .build();
                 })
                 .collect(Collectors.toList());
+
+        // Map quiz nếu có
+        QuizResponse quizResponse = null;
+        if (module.getQuiz() != null) {
+            Quiz quiz = module.getQuiz();
+            quizResponse = QuizResponse.builder()
+                    .id(quiz.getId())
+                    .title(quiz.getTitle())
+                    .description(quiz.getDescription())
+                    .passScore(quiz.getPassScore())
+                    .moduleId(module.getId())
+                    .moduleName(module.getTitle())
+                    .active(quiz.getActive())
+                    .questions(quiz.getQuestions().stream()
+                            .map(q -> QuizResponse.QuestionResponse.builder()
+                                    .id(q.getId())
+                                    .questionText(q.getQuestionText())
+                                    .orderIndex(q.getOrderIndex())
+                                    .options(q.getOptions().stream()
+                                            .map(opt -> QuizResponse.OptionResponse.builder()
+                                                    .id(opt.getId())
+                                                    .optionText(opt.getOptionText())
+                                                    .isCorrect(opt.getIsCorrect())
+                                                    .explanation(opt.getExplanation())
+                                                    .build())
+                                            .collect(Collectors.toList()))
+                                    .build())
+                            .collect(Collectors.toList()))
+                    .build();
+        }
+
         return CourseModuleResponse.builder()
                 .id(module.getId())
                 .title(module.getTitle())
                 .videos(videoDTOs)
                 .orderIndex(module.getOrderIndex())
+                .quiz(quizResponse)
                 .createdAt(module.getCreatedAt())
                 .updatedAt(module.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Tạo quiz cho module từ QuizRequest
+     */
+    private void createQuizForModule(CourseModule module, QuizRequest quizRequest) {
+        Quiz quiz = new Quiz();
+        quiz.setTitle(quizRequest.getTitle() != null ? quizRequest.getTitle() : "Quiz - " + module.getTitle());
+        quiz.setDescription(quizRequest.getDescription());
+        quiz.setPassScore(quizRequest.getPassScore() != null ? quizRequest.getPassScore() : 70);
+        quiz.setCourseModule(module);
+        quiz.setActive(true);
+
+        List<QuizQuestion> questions = new ArrayList<>();
+        if (quizRequest.getQuestions() != null) {
+            for (int i = 0; i < quizRequest.getQuestions().size(); i++) {
+                QuizRequest.QuestionRequest qReq = quizRequest.getQuestions().get(i);
+                QuizQuestion question = new QuizQuestion();
+                question.setQuestionText(qReq.getQuestionText());
+                question.setOrderIndex(qReq.getOrderIndex() != null ? qReq.getOrderIndex() : i);
+                question.setQuiz(quiz);
+
+                List<QuizOption> options = new ArrayList<>();
+                if (qReq.getOptions() != null) {
+                    for (QuizRequest.OptionRequest optReq : qReq.getOptions()) {
+                        QuizOption option = new QuizOption();
+                        option.setOptionText(optReq.getOptionText());
+                        option.setIsCorrect(optReq.getCorrect() != null ? optReq.getCorrect() : false);
+                        option.setExplanation(optReq.getExplanation());
+                        option.setQuestion(question);
+                        options.add(option);
+                    }
+                }
+                question.setOptions(options);
+                questions.add(question);
+            }
+        }
+        quiz.setQuestions(questions);
+        quizRepo.save(quiz);
+        log.info("Quiz created for module: {} with {} questions", module.getTitle(), questions.size());
     }
 
     private CourseHomeResponse mapToCourseHomeResponse(Course course, boolean isEnrolled) {
