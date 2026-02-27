@@ -125,6 +125,21 @@
                     </div>
                 </div>
 
+                <!-- Certificate Section -->
+                <div class="card shadow-sm mt-3 border-success" id="certificateSection" style="display:none;">
+                    <div class="card-body text-center">
+                        <div class="py-3">
+                            <i class="fas fa-award fa-4x text-warning mb-3"></i>
+                            <h4 class="text-success">🎉 Chúc mừng! Bạn đã hoàn thành khóa học!</h4>
+                            <p class="text-muted">Bạn đã hoàn thành 100% nội dung khóa học. Hãy nhận chứng chỉ của bạn!</p>
+                            <a th:href="@{'/courses/certificate/' + ${course.id}}"
+                               class="btn btn-lg btn-success mt-2" id="downloadCertBtn">
+                                <i class="fas fa-certificate me-2"></i> Nhận chứng chỉ
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Feedback / Comments -->
                 <div class="card shadow-sm mt-3" id="feedbackSection">
                     <div class="card-header">
@@ -216,9 +231,10 @@
                                             <!-- Quiz button for this module -->
                                             <div th:if="${module.quiz != null}">
                                                 <button class="quiz-btn-module"
+                                                        th:classappend="${module.quiz.passed} ? 'passed' : ''"
                                                         th:attr="data-module-id=${module.id}, data-quiz-id=${module.quiz.id}"
                                                         onclick="openQuiz(this)">
-                                                    <i class="fas fa-question-circle"></i>
+                                                    <i th:class="${module.quiz.passed} ? 'fas fa-check-circle' : 'fas fa-question-circle'"></i>
                                                     <span th:text="${module.quiz.title}">Quiz</span>
                                                     <span class="badge bg-light text-dark ms-auto"
                                                           th:text="${#lists.size(module.quiz.questions)} + ' câu'">0 câu</span>
@@ -513,6 +529,14 @@
 
         document.getElementById('progressBar').style.width = percentage + '%';
         document.getElementById('progressText').textContent = percentage + '%';
+
+        // Hiển thị nút nhận chứng chỉ khi hoàn thành 100%
+        const certSection = document.getElementById('certificateSection');
+        if (percentage >= 100) {
+            certSection.style.display = 'block';
+        } else {
+            certSection.style.display = 'none';
+        }
     }
 
     // ===== QUIZ FUNCTIONS =====

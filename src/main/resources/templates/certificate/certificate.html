@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Chứng nhận hoàn thành khóa học</title>
+    <style>
+        @page {
+            /* Kích thước chuẩn A4 ngang */
+            size: 1122px 793px;
+            margin: 0;
+        }
+        body {
+            /* Nhớ cấu hình font tiếng Việt trong Java khớp với tên 'Roboto' ở đây */
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .cert-container {
+            position: relative;
+            width: 1122px;
+            height: 793px;
+        }
+        .bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .text-overlay {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            left: 0;
+        }
+
+        /* Căn chỉnh tên học viên ngay trên đường kẻ đen (khoảng 50% chiều cao) */
+        .student-name {
+            top: 330px; /* Chỉnh số này lên xuống để chữ vừa khít trên đường kẻ đen */
+            font-size: 55px;
+            font-weight: bold;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            /* Nếu bạn có font chữ ký/chữ kiểu (như Great Vibes) thì thêm vào đây cho đẹp */
+        }
+
+        /* Dòng chữ phụ chú phía dưới đường kẻ */
+        .completion-text {
+            top: 450px;
+            font-size: 25px;
+            color: #4a4a4a;
+            font-style: italic;
+        }
+
+        /* Tên khóa học nằm dưới dòng phụ chú, dùng màu vàng gold cho tone-sur-tone với logo */
+        .course-name {
+            top: 510px;
+            font-size: 40px;
+            font-weight: bold;
+            color: #c59b27; /* Màu vàng gold lấy từ ảnh gốc */
+            text-transform: uppercase;
+            padding: 0 50px; /* Thêm padding 2 bên để tên khóa học quá dài không bị chạm viền */
+            box-sizing: border-box;
+        }
+
+    </style>
+</head>
+<body>
+<div class="cert-container">
+    <img class="bg-image" th:src="${bgImage}" alt="background"/>
+
+    <div class="text-overlay student-name" th:text="${studentName}">NGUYỄN VĂN A</div>
+
+    <div class="text-overlay completion-text">Đã hoàn thành xuất sắc khóa học</div>
+
+    <div class="text-overlay course-name" th:text="${courseName}">LẬP TRÌNH JAVA SPRING BOOT MICROSERVICES</div>
+
+</div>
+</body>
+</html>

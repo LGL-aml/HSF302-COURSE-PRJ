@@ -9,6 +9,7 @@ import com.jungle.courseshop.exception.ResourceNotFoundException;
 import com.jungle.courseshop.repository.*;
 import com.jungle.courseshop.service.CloudinaryService;
 import com.jungle.courseshop.service.CourseService;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +43,8 @@ public class CourseServiceImpl implements CourseService {
     private final TopicRepo topicRepo;
     private final QuizRepo quizRepo;
     private final QuizAttemptRepo quizAttemptRepo;
+    private final FeedbackRepo feedbackRepo;
+    private final EntityManager entityManager;
 
 
     @Transactional
@@ -156,18 +159,22 @@ public class CourseServiceImpl implements CourseService {
 
         // Xử lý cập nhật modules và videos nếu có
         if (request.getModules() != null) {
-            // Lấy toàn bộ module cũ
             List<CourseModule> oldModules = moduleRepository.findByCourseOrderByOrderIndexAsc(course);
 
-            // Xóa watched_video records trước khi xóa videos
             List<CourseVideo> allOldVideos = oldModules.stream()
                     .flatMap(m -> m.getVideos().stream())
                     .collect(Collectors.toList());
+
             if (!allOldVideos.isEmpty()) {
+                // Xóa replies trước (FK: feedback.parent_id -> feedback.id)
+                feedbackRepo.deleteRepliesByVideoIn(allOldVideos);
+                // Xóa feedback gốc
+                feedbackRepo.deleteByVideoIn(allOldVideos);
+                // Xóa watched_video (FK: watched_video.video_id -> course_video.id)
                 watchedVideoRepository.deleteByVideoIn(allOldVideos);
             }
 
-            // Xóa quiz_attempt records trước khi xóa quizzes
+            // Xóa quiz_attempt trước khi xóa quiz
             List<Quiz> allOldQuizzes = oldModules.stream()
                     .filter(m -> m.getQuiz() != null)
                     .map(CourseModule::getQuiz)
@@ -176,8 +183,18 @@ public class CourseServiceImpl implements CourseService {
                 quizAttemptRepo.deleteByQuizIn(allOldQuizzes);
             }
 
-            // Xóa toàn bộ module cũ (cascade sẽ xóa videos, quiz, questions, options)
-            moduleRepository.deleteAll(oldModules);
+            // Flush + clear persistence context để đảm bảo các lệnh DELETE trên đã commit
+            // trước khi cascade delete xóa course_video
+            entityManager.flush();
+            entityManager.clear();
+
+            // Reload course sau khi clear context
+            course = courseRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
+
+            // Xóa toàn bộ module cũ (cascade xóa videos, quiz, questions, options)
+            List<CourseModule> reloadedModules = moduleRepository.findByCourseOrderByOrderIndexAsc(course);
+            moduleRepository.deleteAll(reloadedModules);
             moduleRepository.flush();
 
             // Tạo lại module và video mới
@@ -215,8 +232,7 @@ public class CourseServiceImpl implements CourseService {
         }
 
         Course savedCourse = courseRepository.save(course);
-        // Lấy lại modules để trả về response
-        List<CourseModule> modules = moduleRepository.findByCourse_ActiveTrueOrderByOrderIndexAsc();
+        List<CourseModule> modules = moduleRepository.findByCourseOrderByOrderIndexAsc(savedCourse);
         return mapToCourseResponse(savedCourse, modules, currentUser);
     }
 
@@ -498,6 +514,8 @@ public class CourseServiceImpl implements CourseService {
         QuizResponse quizResponse = null;
         if (module.getQuiz() != null) {
             Quiz quiz = module.getQuiz();
+            // Kiểm tra user đã pass quiz này chưa
+            boolean passed = currentUser != null && quizAttemptRepo.existsByUserAndQuizAndPassedTrue(currentUser, quiz);
             quizResponse = QuizResponse.builder()
                     .id(quiz.getId())
                     .title(quiz.getTitle())
@@ -506,6 +524,7 @@ public class CourseServiceImpl implements CourseService {
                     .moduleId(module.getId())
                     .moduleName(module.getTitle())
                     .active(quiz.getActive())
+                    .passed(passed)
                     .questions(quiz.getQuestions().stream()
                             .map(q -> QuizResponse.QuestionResponse.builder()
                                     .id(q.getId())

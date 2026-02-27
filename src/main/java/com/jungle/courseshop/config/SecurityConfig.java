@@ -28,6 +28,7 @@ public class SecurityConfig {
             "/auth/**",
             "/courses",
             "/courses/**",
+            "/certificate/**",
             "/css/**",
             "/js/**",
             "/images/**",

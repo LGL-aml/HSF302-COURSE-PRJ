@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -21,6 +20,7 @@ public class QuizResponse {
     private String moduleName;
     private List<QuestionResponse> questions;
     private Boolean active;
+    private Boolean passed; // true nếu user hiện tại đã pass quiz này
 
     @Data
     @Builder

@@ -6,7 +6,15 @@ import com.jungle.courseshop.dto.response.CourseDetailPublicResponse;
 import com.jungle.courseshop.dto.response.CourseEnrollmentResponse;
 import com.jungle.courseshop.dto.response.CourseHomeResponse;
 import com.jungle.courseshop.dto.response.CourseResponse;
+import com.jungle.courseshop.entity.Certificate;
+import com.jungle.courseshop.entity.CourseEnrollment;
+import com.jungle.courseshop.entity.EnrollmentStatus;
 import com.jungle.courseshop.entity.Topic;
+import com.jungle.courseshop.entity.User;
+import com.jungle.courseshop.repository.CertificateRepo;
+import com.jungle.courseshop.repository.CourseEnrollmentRepo;
+import com.jungle.courseshop.repository.UserRepo;
+import com.jungle.courseshop.service.CertificateService;
 import com.jungle.courseshop.service.impl.CourseEnrollmentServiceImpl;
 import com.jungle.courseshop.service.impl.CourseServiceImpl;
 import com.jungle.courseshop.service.impl.TopicServiceImpl;
@@ -15,13 +23,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -30,10 +44,12 @@ import java.util.List;
 public class CourseController {
 
     private final CourseEnrollmentServiceImpl enrollmentService;
-
     private final CourseServiceImpl courseService;
-
     private final TopicServiceImpl topicService;
+    private final CertificateService certificateService;
+    private final UserRepo userRepo;
+    private final CourseEnrollmentRepo enrollmentRepo;
+    private final CertificateRepo certificateRepo;
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
@@ -92,11 +108,80 @@ public class CourseController {
             CourseResponse course = courseService.getCourseById(id);
             model.addAttribute("course", course);
             model.addAttribute("title", course.getTitle() + " - Học khóa học");
+
+            // Kiểm tra tiến độ và chứng chỉ
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            User currentUser = userRepo.findByUsernameAndEnabledTrue(username).orElse(null);
+            if (currentUser != null) {
+                var enrollments = enrollmentRepo.findByUserOrderByEnrollmentDateDesc(currentUser);
+                for (var enrollment : enrollments) {
+                    if (enrollment.getCourse().getId().equals(id)) {
+                        model.addAttribute("progress", enrollment.getProgress() != null ? enrollment.getProgress() : 0.0);
+                        model.addAttribute("isCompleted", enrollment.getStatus() == EnrollmentStatus.COMPLETED);
+                        boolean hasCertificate = certificateRepo.findByUserIdAndCourseId(currentUser.getId(), id).isPresent();
+                        model.addAttribute("hasCertificate", hasCertificate);
+                        break;
+                    }
+                }
+            }
+
             return "courses/learn";
         } catch (Exception e) {
             log.error("Error loading course for learning", e);
             model.addAttribute("error", "Không thể tải khóa học. Bạn cần đăng ký khóa học này trước.");
             return "redirect:/courses/" + id;
+        }
+    }
+
+    @GetMapping("/certificate/{courseId}")
+    @PreAuthorize("isAuthenticated()")
+    public String viewMyCertificate(@PathVariable Long courseId, Model model) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            User currentUser = userRepo.findByUsernameAndEnabledTrue(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Certificate certificate = certificateRepo.findByUserIdAndCourseId(currentUser.getId(), courseId)
+                    .orElseThrow(() -> new RuntimeException("Bạn chưa hoàn thành khóa học này"));
+
+            return "redirect:/certificate/" + certificate.getId();
+        } catch (RuntimeException e) {
+            log.error("Error viewing certificate for course {}", courseId, e);
+            return "redirect:/courses/learn/" + courseId + "?error=certificate_not_found";
+        }
+    }
+
+    @GetMapping("/certificate/{courseId}/download")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> downloadCertificate(@PathVariable Long courseId) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            User currentUser = userRepo.findByUsernameAndEnabledTrue(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Kiểm tra chứng chỉ tồn tại
+            Certificate certificate = certificateRepo.findByUserIdAndCourseId(currentUser.getId(), courseId)
+                    .orElseThrow(() -> new RuntimeException("Bạn chưa hoàn thành khóa học này"));
+
+            // Tạo PDF chứng chỉ
+            byte[] pdfBytes = certificateService.generateCertificatePdf(
+                    currentUser.getFullname(),
+                    certificate.getCourse().getTitle()
+            );
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=certificate_" + courseId + ".pdf")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdfBytes);
+        } catch (RuntimeException e) {
+            log.error("Error downloading certificate for course {}", courseId, e);
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("Error generating certificate PDF for course {}", courseId, e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 
