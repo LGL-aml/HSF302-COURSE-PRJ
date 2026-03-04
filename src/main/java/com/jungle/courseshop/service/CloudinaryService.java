@@ -9,5 +9,6 @@ public interface CloudinaryService {
     String uploadFile(MultipartFile file) throws IOException;
 
     void deleteFile(String publicId) throws IOException;
-}
 
+    String uploadBytes(byte[] bytes, String folder, String filename) throws IOException;
+}

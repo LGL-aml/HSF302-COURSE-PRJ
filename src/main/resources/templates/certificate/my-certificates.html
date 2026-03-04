@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<head>
+    <title>Chứng chỉ của tôi - Course Shop</title>
+    <style>
+        .cert-hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 48px 0 36px;
+            margin-bottom: 36px;
+            border-radius: 0 0 24px 24px;
+        }
+        .cert-hero h1 { font-size: 2rem; font-weight: 800; letter-spacing: 1px; }
+        .cert-hero p { color: rgba(255,255,255,0.75); font-size: 1.05rem; }
+        .cert-stats {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50px;
+            padding: 8px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        /* Certificate Card */
+        .cert-card {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            border: 1px solid #efefef;
+            overflow: hidden;
+            transition: transform 0.25s, box-shadow 0.25s;
+            height: 100%;
+        }
+        .cert-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.14);
+        }
+
+        /* Certificate thumbnail */
+        .cert-thumb {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            background: #f0f0f0;
+            border-bottom: 3px solid #c59b27;
+        }
+        .cert-thumb img.cloudinary-thumb {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+        /* Fallback thumbnail: overlay on bg image */
+        .cert-thumb .fallback-thumb {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+        }
+        .cert-thumb .fallback-thumb .bg-img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+        .cert-thumb .fallback-thumb .overlay-name {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 8px 10px;
+            text-align: center;
+        }
+
+        .cert-badge-gold {
+            position: absolute;
+            top: 12px; right: 12px;
+            background: linear-gradient(135deg, #c59b27, #f5d77e);
+            color: #4a3000;
+            border-radius: 50px;
+            padding: 5px 14px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(197,155,39,0.4);
+        }
+
+        /* Card body */
+        .cert-card-body { padding: 20px; }
+        .cert-card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .cert-card-meta {
+            font-size: 0.82rem;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .cert-card-date {
+            font-size: 0.82rem;
+            color: #aaa;
+            margin-bottom: 18px;
+        }
+
+        /* Action buttons */
+        .cert-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-view-cert {
+            background: linear-gradient(135deg, #c59b27, #e8ba42);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 9px 16px;
+            font-size: 0.87rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            flex: 1;
+            justify-content: center;
+        }
+        .btn-view-cert:hover {
+            background: linear-gradient(135deg, #b08a20, #c59b27);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        .btn-download-cert {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 9px 14px;
+            font-size: 0.87rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            flex: 1;
+            justify-content: center;
+        }
+        .btn-download-cert:hover {
+            background: #28a745;
+            color: #fff;
+            border-color: #28a745;
+            transform: translateY(-2px);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .empty-icon {
+            width: 120px; height: 120px;
+            background: linear-gradient(135deg, #f8f4e8, #fdf3d3);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 3.5rem;
+        }
+        .empty-state h3 { color: #1a1a2e; font-weight: 700; margin-bottom: 10px; }
+        .empty-state p { color: #888; max-width: 400px; margin: 0 auto 24px; }
+
+        /* Section header */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 14px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .section-header h4 {
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 576px) {
+            .cert-hero { padding: 32px 0 24px; }
+            .cert-hero h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div layout:fragment="content">
+
+    <!-- Hero Banner -->
+    <div class="cert-hero text-center">
+        <div class="container">
+            <div style="font-size: 3.5rem; margin-bottom: 14px;">🏅</div>
+            <h1><i class="fas fa-certificate me-2 text-warning"></i>Chứng chỉ của tôi</h1>
+            <p class="mb-3">Tất cả chứng chỉ bạn đã đạt được từ các khóa học đã hoàn thành</p>
+            <div th:if="${certificates != null}" class="cert-stats">
+                <i class="fas fa-award text-warning"></i>
+                <span th:text="${certificates.size()} + ' chứng chỉ'">0 chứng chỉ</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Has certificates -->
+        <div th:if="${certificates != null and !certificates.isEmpty()}">
+            <div class="section-header">
+                <h4><i class="fas fa-graduation-cap text-warning me-2"></i>Chứng chỉ đã đạt được</h4>
+                <a href="/courses/me" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-book me-1"></i>Khóa học của tôi
+                </a>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6" th:each="cert : ${certificates}">
+                    <div class="cert-card">
+
+                        <!-- Thumbnail -->
+                        <div class="cert-thumb">
+                            <!-- Cloudinary image -->
+                            <div th:if="${cert.certificateUrl != null and !#strings.isEmpty(cert.certificateUrl)}">
+                                <img th:src="${cert.certificateUrl}"
+                                     class="cloudinary-thumb"
+                                     alt="Certificate"
+                                     loading="lazy"/>
+                            </div>
+                            <!-- Fallback: course cover + name overlay -->
+                            <div th:if="${cert.certificateUrl == null or #strings.isEmpty(cert.certificateUrl)}"
+                                 class="fallback-thumb">
+                                <img th:src="${cert.courseCoverImage != null ? cert.courseCoverImage : '/images/certificate.png'}"
+                                     class="bg-img" alt="Course Cover"/>
+                                <div class="overlay-name" th:text="${cert.courseTitle}">Tên khóa học</div>
+                            </div>
+
+                            <!-- Gold badge -->
+                            <div class="cert-badge-gold">
+                                <i class="fas fa-award me-1"></i>Hoàn thành
+                            </div>
+                        </div>
+
+                        <!-- Body -->
+                        <div class="cert-card-body">
+                            <div class="cert-card-title" th:text="${cert.courseTitle}">Tên khóa học</div>
+
+                            <div class="cert-card-meta">
+                                <i class="fas fa-chalkboard-teacher text-success"></i>
+                                <span th:text="${cert.lecturerName}">Giảng viên</span>
+                            </div>
+
+                            <div class="cert-card-meta">
+                                <i class="fas fa-user-graduate text-primary"></i>
+                                <span th:text="${cert.username}">Học viên</span>
+                            </div>
+
+                            <div class="cert-card-date">
+                                <i class="fas fa-calendar-check me-1 text-warning"></i>
+                                Cấp ngày:
+                                <strong th:text="${#temporals.format(cert.issuedDate, 'dd/MM/yyyy')}">01/01/2026</strong>
+                            </div>
+
+                            <div class="cert-actions">
+                                <a th:href="@{'/certificate/' + ${cert.id}}" class="btn-view-cert">
+                                    <i class="fas fa-eye"></i> Xem chứng chỉ
+                                </a>
+                                <a th:href="@{'/certificate/' + ${cert.id} + '/download'}"
+                                   class="btn-download-cert">
+                                    <i class="fas fa-file-pdf"></i> PDF
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty state -->
+        <div th:if="${certificates == null or certificates.isEmpty()}" class="empty-state">
+            <div class="empty-icon">🏅</div>
+            <h3>Chưa có chứng chỉ nào</h3>
+            <p>Hoàn thành các khóa học để nhận chứng chỉ của bạn. Hãy tiếp tục học và chinh phục các khóa học!</p>
+            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                <a href="/courses/me" class="btn btn-primary">
+                    <i class="fas fa-play me-2"></i>Tiếp tục học
+                </a>
+                <a href="/courses" class="btn btn-outline-primary">
+                    <i class="fas fa-search me-2"></i>Khám phá khóa học
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
+

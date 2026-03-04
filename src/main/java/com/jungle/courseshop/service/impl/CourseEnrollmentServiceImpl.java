@@ -6,6 +6,7 @@ import com.jungle.courseshop.entity.*;
 import com.jungle.courseshop.repository.*;
 import com.jungle.courseshop.service.CourseEnrollmentService;
 import com.jungle.courseshop.service.EmailService;
+import com.jungle.courseshop.service.CertificateService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class CourseEnrollmentServiceImpl implements CourseEnrollmentService {
     private final CertificateRepo certificateRepository;
     private final QuizAttemptRepo quizAttemptRepo;
     private final QuizRepo quizRepo;
+    private final CertificateService certificateService;
 
     @Transactional
     public CourseEnrollmentResponse enrollCourse(Long courseId) throws MessagingException, UnsupportedEncodingException, MessagingException {
@@ -205,7 +207,6 @@ public class CourseEnrollmentServiceImpl implements CourseEnrollmentService {
         long totalVideos = videoCourseRepository.countByCourseModule_Course(course);
         long watchedVideos = watchedVideoRepository.countByUserAndVideo_CourseModule_Course_AndWatchedTrue(user, course);
 
-        // Đếm quiz theo module
         List<CourseModule> modules = moduleRepository.findByCourseOrderByOrderIndexAsc(course);
         long totalQuizzes = 0;
         long passedQuizzes = 0;
@@ -231,7 +232,6 @@ public class CourseEnrollmentServiceImpl implements CourseEnrollmentService {
         double progress = (completedItems * 100.0) / totalItems;
         enrollment.setProgress(Math.min(progress, 100.0));
 
-        // Hoàn thành khi xem hết video VÀ pass hết quiz
         boolean allVideosWatched = totalVideos == 0 || watchedVideos >= totalVideos;
         boolean allQuizzesPassed = totalQuizzes == 0 || passedQuizzes >= totalQuizzes;
 
@@ -244,13 +244,28 @@ public class CourseEnrollmentServiceImpl implements CourseEnrollmentService {
                     course.getDuration(),
                     course.getCreator().getFullname(),
                     LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
             // Tạo chứng chỉ nếu chưa có
             if (!certificateRepository.existsByUserAndCourse(user, course)) {
                 Certificate certificate = new Certificate();
                 certificate.setUser(user);
                 certificate.setCourse(course);
                 certificate.setIssuedDate(LocalDateTime.now());
-                certificateRepository.save(certificate);
+                Certificate savedCert = certificateRepository.save(certificate);
+
+                // Upload ảnh chứng chỉ lên Cloudinary (async - không block nếu lỗi)
+                try {
+                    String certImageUrl = certificateService.generateAndUploadCertificateImage(
+                            user.getFullname(),
+                            course.getTitle(),
+                            savedCert.getId()
+                    );
+                    savedCert.setCertificateUrl(certImageUrl);
+                    certificateRepository.save(savedCert);
+                    log.info("Certificate image uploaded for user={} course={}: {}", user.getUsername(), course.getId(), certImageUrl);
+                } catch (Exception e) {
+                    log.error("Failed to upload certificate image to Cloudinary for cert id={}", savedCert.getId(), e);
+                }
             }
         }
 

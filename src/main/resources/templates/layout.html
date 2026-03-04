@@ -78,6 +78,9 @@
                             <li><a class="dropdown-item" th:href="@{/courses/me}">
                                 <i class="fas fa-book-reader me-2"></i>Khóa học của tôi
                             </a></li>
+                            <li><a class="dropdown-item" th:href="@{/certificate/my}">
+                                <i class="fas fa-certificate me-2 text-warning"></i>Chứng chỉ của tôi
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form th:action="@{/logout}" method="post">
@@ -599,7 +602,7 @@
 
         #ragChatSend:not(:disabled):hover {
             transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
         .rag-chat-footer {

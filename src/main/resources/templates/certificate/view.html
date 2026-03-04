@@ -1,120 +1,68 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title th:text="${title != null ? title : 'Chứng chỉ hoàn thành khóa học'}">Chứng chỉ</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
     <style>
-        body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        .certificate-page { padding: 20px 0 40px; }
 
-        .certificate-page {
-            padding: 40px 0 60px;
-        }
-
-        /* Confetti / sparkle header */
-        .page-header {
-            text-align: center;
-            padding: 30px 0 20px;
-            color: #fff;
-        }
-        .page-header h2 {
-            font-size: 1.8rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-        .page-header p {
-            color: rgba(255,255,255,0.7);
-            margin-bottom: 0;
-        }
+        .page-header { text-align: center; padding: 20px 0 16px; }
+        .page-header h2 { font-size: 1.8rem; font-weight: 700; letter-spacing: 1px; color: #1a1a2e; }
+        .page-header p { color: #666; margin-bottom: 0; }
 
         .certificate-wrapper {
             background: #fff;
             border-radius: 20px;
-            box-shadow: 0 25px 70px rgba(0,0,0,0.4);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.15);
             overflow: hidden;
             max-width: 860px;
             margin: 0 auto;
+            border: 1px solid #e0e0e0;
         }
 
-        /* Certificate image preview */
-        .certificate-image-container {
-            position: relative;
+        /* Ảnh chứng chỉ từ Cloudinary */
+        .certificate-cloudinary-img {
             width: 100%;
-            background: #f0f0f0;
+            display: block;
+            border-radius: 0;
         }
+
+        /* Fallback: certificate image container with text overlay */
+        .certificate-image-container { position: relative; width: 100%; background: #f0f0f0; }
         .certificate-image-container .cert-container {
-            position: relative;
-            width: 100%;
-            padding-bottom: 70.68%; /* 793/1122 aspect ratio */
-            overflow: hidden;
+            position: relative; width: 100%; padding-bottom: 70.68%; overflow: hidden;
         }
         .certificate-image-container .bg-image {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            object-fit: cover;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
         }
         .certificate-image-container .text-overlay {
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            left: 0;
+            position: absolute; width: 100%; text-align: center; left: 0;
         }
         .certificate-image-container .student-name {
-            top: 41.6%;
-            font-size: clamp(16px, 4vw, 48px);
-            font-weight: 700;
-            color: #1a1a1a;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            top: 41.6%; font-size: clamp(16px, 4vw, 48px); font-weight: 700;
+            color: #1a1a1a; text-transform: uppercase; letter-spacing: 2px;
         }
         .certificate-image-container .completion-text {
-            top: 56.7%;
-            font-size: clamp(9px, 2vw, 20px);
-            color: #4a4a4a;
-            font-style: italic;
+            top: 56.7%; font-size: clamp(9px, 2vw, 20px); color: #4a4a4a; font-style: italic;
         }
         .certificate-image-container .course-name {
-            top: 64.3%;
-            font-size: clamp(12px, 3.2vw, 34px);
-            font-weight: 700;
-            color: #c59b27;
-            text-transform: uppercase;
-            padding: 0 50px;
-            box-sizing: border-box;
+            top: 64.3%; font-size: clamp(12px, 3.2vw, 34px); font-weight: 700;
+            color: #c59b27; text-transform: uppercase; padding: 0 50px; box-sizing: border-box;
         }
 
         /* Info section */
-        .cert-info-section {
-            padding: 28px 36px 10px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .cert-info-section h3 {
-            color: #1a1a2e;
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 16px;
-        }
+        .cert-info-section { padding: 28px 36px 10px; border-bottom: 1px solid #f0f0f0; }
+        .cert-info-section h3 { color: #1a1a2e; font-weight: 700; font-size: 1.1rem; margin-bottom: 16px; }
         .info-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 10px 0;
-            border-bottom: 1px solid #f8f8f8;
+            display: flex; align-items: center; gap: 14px;
+            padding: 10px 0; border-bottom: 1px solid #f8f8f8;
         }
         .info-item:last-child { border-bottom: none; }
         .info-item .icon-box {
-            width: 42px; height: 42px;
-            border-radius: 10px;
+            width: 42px; height: 42px; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-            font-size: 1.1rem;
+            flex-shrink: 0; font-size: 1.1rem;
         }
         .info-item .icon-box.blue   { background: #e7f3ff; color: #007bff; }
         .info-item .icon-box.green  { background: #d4edda; color: #28a745; }
@@ -125,131 +73,87 @@
 
         /* Action buttons */
         .action-buttons {
-            padding: 24px 36px 30px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            justify-content: center;
+            padding: 24px 36px 30px; display: flex; gap: 12px;
+            flex-wrap: wrap; justify-content: center;
         }
         .btn-download-pdf {
-            background: linear-gradient(135deg, #28a745, #1e7e34);
-            color: #fff;
-            border: none;
-            padding: 14px 36px;
-            border-radius: 12px;
-            font-size: 1.05rem;
-            font-weight: 700;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+            background: linear-gradient(135deg, #28a745, #1e7e34); color: #fff;
+            border: none; padding: 14px 36px; border-radius: 12px; font-size: 1.05rem;
+            font-weight: 700; text-decoration: none; display: inline-flex; align-items: center;
+            gap: 10px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(40,167,69,0.3);
         }
         .btn-download-pdf:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(40,167,69,0.45);
-            color: #fff;
+            transform: translateY(-3px); box-shadow: 0 8px 25px rgba(40,167,69,0.45); color: #fff;
         }
         .btn-share {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: #fff;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 12px;
-            font-size: 1.05rem;
-            font-weight: 600;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+            background: linear-gradient(135deg, #007bff, #0056b3); color: #fff; border: none;
+            padding: 14px 28px; border-radius: 12px; font-size: 1.05rem; font-weight: 600;
+            transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,123,255,0.3);
         }
         .btn-share:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,123,255,0.45);
-            color: #fff;
+            transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,123,255,0.45); color: #fff;
         }
-
-        /* Back link */
-        .back-link {
-            text-align: center;
-            margin-top: 24px;
-            padding-bottom: 20px;
+        .back-link { text-align: center; margin-top: 24px; }
+        .award-banner {
+            background: linear-gradient(90deg, #c59b27, #f5d77e, #c59b27);
+            padding: 14px 20px; text-align: center; color: #4a3000;
+            font-weight: 700; font-size: 1rem; letter-spacing: 1px;
         }
-        .back-link a {
-            color: rgba(255,255,255,0.65);
-            text-decoration: none;
-            font-size: 0.95rem;
-            transition: color 0.2s;
-        }
-        .back-link a:hover { color: #fff; }
-
-        /* Toast */
         .toast-copied {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
+            position: fixed; bottom: 30px; left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: #28a745;
-            color: #fff;
-            padding: 12px 26px;
-            border-radius: 10px;
-            font-weight: 600;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.25);
-            transition: transform 0.3s;
-            z-index: 9999;
+            background: #28a745; color: #fff; padding: 12px 26px;
+            border-radius: 10px; font-weight: 600;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.25); transition: transform 0.3s; z-index: 9999;
         }
         .toast-copied.show { transform: translateX(-50%) translateY(0); }
 
-        /* Error state */
-        .error-container {
-            text-align: center;
-            padding: 80px 20px;
-            color: #fff;
-        }
-        .error-container i { font-size: 5rem; margin-bottom: 20px; color: #dc3545; }
-
-        /* Award banner */
-        .award-banner {
-            background: linear-gradient(90deg, #c59b27, #f5d77e, #c59b27);
-            padding: 14px 20px;
-            text-align: center;
-            color: #4a3000;
-            font-weight: 700;
-            font-size: 1rem;
-            letter-spacing: 1px;
+        .cert-img-loading {
+            width: 100%; min-height: 200px; display: flex;
+            align-items: center; justify-content: center;
+            background: #f8f9fa; color: #6c757d;
         }
     </style>
 </head>
 <body>
+<div layout:fragment="content">
 
-<!-- Error state -->
-<div th:if="${error}" class="error-container">
-    <i class="fas fa-exclamation-triangle"></i>
-    <h3 th:text="${error}">Lỗi</h3>
-    <a href="/" class="btn btn-outline-light mt-3">
-        <i class="fas fa-home me-2"></i>Về trang chủ
-    </a>
-</div>
-
-<!-- Certificate display -->
-<div th:if="${certificate}" class="certificate-page">
-
-    <!-- Page header -->
-    <div class="page-header">
-        <div style="font-size:3rem; margin-bottom:10px;">🎓</div>
-        <h2>Chứng chỉ hoàn thành khóa học</h2>
-        <p>Xin chúc mừng bạn đã hoàn thành xuất sắc!</p>
+    <!-- Error state -->
+    <div th:if="${error}" class="text-center py-5">
+        <i class="fas fa-exclamation-triangle fa-4x text-danger mb-3"></i>
+        <h3 th:text="${error}">Lỗi</h3>
+        <a href="/" class="btn btn-primary mt-3">
+            <i class="fas fa-home me-2"></i>Về trang chủ
+        </a>
     </div>
 
-    <div class="container">
-        <div class="certificate-wrapper">
+    <!-- Certificate display -->
+    <div th:if="${certificate}" class="certificate-page">
 
+        <!-- Page header -->
+        <div class="page-header">
+            <div style="font-size:3rem; margin-bottom:10px;">🎓</div>
+            <h2>Chứng chỉ hoàn thành khóa học</h2>
+            <p class="text-muted">Xin chúc mừng bạn đã hoàn thành xuất sắc!</p>
+        </div>
+
+        <div class="certificate-wrapper">
             <!-- Gold award banner -->
             <div class="award-banner">
-                <i class="fas fa-award me-2"></i> CHỨNG CHỈ HOÀN THÀNH KHÓA HỌC &nbsp;|&nbsp; CERTIFICATE OF COMPLETION
+                <i class="fas fa-award me-2"></i>
+                CHỨNG CHỈ HOÀN THÀNH KHÓA HỌC &nbsp;|&nbsp; CERTIFICATE OF COMPLETION
             </div>
 
-            <!-- Certificate Image Preview -->
-            <div class="certificate-image-container">
+            <!-- Ảnh chứng chỉ: ưu tiên từ Cloudinary URL, fallback về overlay -->
+            <div th:if="${certificateUrl != null and !#strings.isEmpty(certificateUrl)}">
+                <img th:src="${certificateUrl}"
+                     class="certificate-cloudinary-img"
+                     alt="Certificate Image"
+                     loading="lazy"/>
+            </div>
+            <!-- Fallback: render từ ảnh nền + text overlay nếu chưa có Cloudinary URL -->
+            <div th:if="${certificateUrl == null or #strings.isEmpty(certificateUrl)}"
+                 class="certificate-image-container">
                 <div class="cert-container">
                     <img class="bg-image" th:src="@{/images/certificate.png}" alt="Certificate Background"/>
                     <div class="text-overlay student-name"  th:text="${studentName}">NGUYỄN VĂN A</div>
@@ -293,8 +197,7 @@
 
             <!-- Action Buttons -->
             <div class="action-buttons">
-                <a th:href="@{'/certificate/' + ${certificateId} + '/download'}"
-                   class="btn-download-pdf">
+                <a th:href="@{'/certificate/' + ${certificateId} + '/download'}" class="btn-download-pdf">
                     <i class="fas fa-file-pdf"></i> Tải về PDF
                 </a>
                 <button class="btn btn-share" onclick="copyLink()">
@@ -304,43 +207,45 @@
         </div>
 
         <!-- Back links -->
-        <div class="back-link">
-            <a href="/courses/me">
+        <div class="back-link mt-3">
+            <a href="/certificate/my" class="btn btn-outline-warning me-2">
+                <i class="fas fa-certificate me-2"></i>Chứng chỉ của tôi
+            </a>
+            <a href="/courses/me" class="btn btn-outline-secondary me-2">
                 <i class="fas fa-arrow-left me-2"></i>Về khóa học của tôi
             </a>
-            &nbsp;&nbsp;|&nbsp;&nbsp;
-            <a href="/">
+            <a href="/" class="btn btn-outline-primary">
                 <i class="fas fa-home me-2"></i>Trang chủ
             </a>
         </div>
     </div>
-</div>
 
-<!-- Toast notification -->
-<div class="toast-copied" id="toastCopied">
-    <i class="fas fa-check-circle me-2"></i>Đã sao chép liên kết!
-</div>
+    <!-- Toast notification -->
+    <div class="toast-copied" id="toastCopied">
+        <i class="fas fa-check-circle me-2"></i>Đã sao chép liên kết!
+    </div>
 
-<script>
-    function copyLink() {
-        const url = window.location.href;
-        navigator.clipboard.writeText(url).then(() => {
-            showToast();
-        }).catch(() => {
-            const input = document.createElement('input');
-            input.value = url;
-            document.body.appendChild(input);
-            input.select();
-            document.execCommand('copy');
-            document.body.removeChild(input);
-            showToast();
-        });
-    }
-    function showToast() {
-        const toast = document.getElementById('toastCopied');
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2500);
-    }
-</script>
+    <script>
+        function copyLink() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                showToast();
+            }).catch(() => {
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showToast();
+            });
+        }
+        function showToast() {
+            const toast = document.getElementById('toastCopied');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+    </script>
+</div>
 </body>
 </html>

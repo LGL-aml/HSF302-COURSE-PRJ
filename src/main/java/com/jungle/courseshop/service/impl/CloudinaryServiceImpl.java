@@ -31,4 +31,16 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     public void deleteFile(String publicId) throws IOException {
         cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
     }
+
+    @Override
+    public String uploadBytes(byte[] bytes, String folder, String filename) throws IOException {
+        var result = cloudinary.uploader().upload(bytes, ObjectUtils.asMap(
+                "folder", folder,
+                "public_id", filename,
+                "unique_filename", true,
+                "resource_type", "image"
+        ));
+
+        return result.get("secure_url").toString();
+    }
 }

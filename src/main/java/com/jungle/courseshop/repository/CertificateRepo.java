@@ -5,9 +5,11 @@ import com.jungle.courseshop.entity.Course;
 import com.jungle.courseshop.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface CertificateRepo extends JpaRepository<Certificate, Long> {
     boolean existsByUserAndCourse(User user, Course course);
     Optional<Certificate> findByUserIdAndCourseId(Long userId, Long courseId);
+    List<Certificate> findByUserIdOrderByIssuedDateDesc(Long userId);
 }
