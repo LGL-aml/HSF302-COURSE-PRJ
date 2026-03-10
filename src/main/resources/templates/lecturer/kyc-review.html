@@ -282,13 +282,12 @@
                 <span class="step-text">Xác thực khuôn mặt</span>
             </div>
             <div class="step-line completed"></div>
-            <div class="step">
+            <div class="step active">
                 <div class="step-number">3</div>
                 <span class="step-text">Hoàn tất</span>
             </div>
         </div>
 
-                <div class="step-number">4</div>
         <div class="warning-box">
             <div class="d-flex align-items-start">
                 <i class="fas fa-exclamation-triangle me-2 mt-1" style="color: #f59e0b;"></i>
@@ -308,12 +307,16 @@
                 </h5>
 
                 <div class="row">
-                        <i class="fas fa-check-circle"></i> Đã xác thực eKYC
+                    <div class="col-12 mb-2">
+                        <span class="text-success fw-semibold">
+                            <i class="fas fa-check-circle"></i> Đã xác thực eKYC
+                        </span>
                         <span th:if="${faceMatchProbability}">
                             &nbsp;| Độ khớp khuôn mặt: <span th:text="${faceMatchProbability}"></span>%
                         </span>
-                            <input type="hidden" th:field="*{identifyNumber}">
-                        </div>
+                        <input type="hidden" th:field="*{identifyNumber}">
+                    </div>
+                    <div class="col-md-6">
                         <div class="info-row">
                             <span class="info-label">Họ và tên:</span>
                             <span class="info-value" th:text="*{fullName}">NGUYEN VAN A</span>
@@ -438,7 +441,7 @@
 </div>
 
 <th:block layout:fragment="scripts">
-                    <i class="fas fa-arrow-left me-2"></i>Quay lại từ đầu
+<script>
         // Form validation
         document.getElementById('reviewForm').addEventListener('submit', function(e) {
             const bio = document.querySelector('textarea[name="bio"]').value;
@@ -455,7 +458,7 @@
                 return false;
             }
         });
-    </script>
+</script>
 </th:block>
 </body>
 </html>
