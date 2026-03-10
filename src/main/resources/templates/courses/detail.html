@@ -111,6 +111,68 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ===== COURSE REVIEWS SECTION ===== -->
+            <div class="card shadow-sm mt-4" id="reviewSection">
+                <div class="card-body">
+                    <h3 class="card-title border-bottom pb-3 mb-4">
+                        <i class="fas fa-star text-warning me-2"></i>Đánh giá khóa học
+                        <span class="badge bg-warning text-dark ms-2" id="reviewCountBadge">0 đánh giá</span>
+                    </h3>
+
+                    <!-- Rating Summary -->
+                    <div class="review-summary mb-4" id="reviewSummary" style="display:none;">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-4 text-center">
+                                <div class="review-avg-score" id="reviewAvgScore">0</div>
+                                <div class="review-stars-display" id="reviewAvgStars"></div>
+                                <div class="text-muted small mt-1" id="reviewTotalText">0 đánh giá</div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="review-dist" id="reviewDistribution">
+                                    <!-- Filled via JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Review Form (for enrolled users) -->
+                    <div id="reviewFormWrapper" style="display:none;" class="mb-4">
+                        <div class="review-form-card">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-pen me-2 text-primary"></i>Viết đánh giá của bạn</h6>
+                            <div class="star-rating-input mb-3" id="starRatingInput">
+                                <span class="star-input" data-value="1"><i class="far fa-star"></i></span>
+                                <span class="star-input" data-value="2"><i class="far fa-star"></i></span>
+                                <span class="star-input" data-value="3"><i class="far fa-star"></i></span>
+                                <span class="star-input" data-value="4"><i class="far fa-star"></i></span>
+                                <span class="star-input" data-value="5"><i class="far fa-star"></i></span>
+                                <span class="rating-label ms-2" id="ratingLabel">Chọn đánh giá</span>
+                            </div>
+                            <textarea id="reviewComment" class="form-control mb-3" rows="3"
+                                      placeholder="Chia sẻ trải nghiệm của bạn về khóa học này..." maxlength="2000"></textarea>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted"><span id="commentCharCount">0</span>/2000 ký tự</small>
+                                <button class="btn btn-primary btn-review-submit" id="btnSubmitReview" onclick="submitReview()" disabled>
+                                    <i class="fas fa-paper-plane me-1"></i> Gửi đánh giá
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User's existing review -->
+                    <div id="userReviewCard" style="display:none;" class="mb-4">
+                        <!-- Filled via JS -->
+                    </div>
+
+                    <!-- Review List -->
+                    <div id="reviewList">
+                        <div class="text-center py-4 text-muted" id="reviewLoadingState">
+                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                            Đang tải đánh giá...
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Right Column - Course Info & Actions -->
@@ -217,6 +279,11 @@
                                     <span th:text="${course.totalEnrolled}">0</span>
                                 </li>
                                 <li class="mb-2">
+                                    <i class="fas fa-star text-warning me-2"></i>
+                                    <strong>Đánh giá:</strong>
+                                    <span id="sidebarRating">Đang tải...</span>
+                                </li>
+                                <li class="mb-2">
                                     <i class="fas fa-certificate text-primary me-2"></i>
                                     <strong>Chứng chỉ:</strong> Có
                                 </li>
@@ -232,5 +299,439 @@
         </div>
     </div>
 </div>
+
+<style>
+/* ===== Review Section Styles ===== */
+.review-summary {
+    background: linear-gradient(135deg, #f8fafc, #eef2ff);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+}
+.review-avg-score {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1;
+}
+.review-stars-display {
+    color: #f59e0b;
+    font-size: 1.2rem;
+    margin-top: 4px;
+}
+.review-dist-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.review-dist-label {
+    font-size: 0.82rem;
+    color: #64748b;
+    min-width: 30px;
+    text-align: right;
+    font-weight: 600;
+}
+.review-dist-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.review-dist-bar {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    transition: width 0.8s ease;
+}
+.review-dist-count {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    min-width: 25px;
+}
+
+/* Star Rating Input */
+.star-rating-input {
+    display: flex;
+    align-items: center;
+}
+.star-input {
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #d1d5db;
+    transition: all 0.2s ease;
+    padding: 0 2px;
+}
+.star-input:hover,
+.star-input.active {
+    color: #f59e0b;
+    transform: scale(1.15);
+}
+.star-input.hovered {
+    color: #fbbf24;
+}
+.rating-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Review Form */
+.review-form-card {
+    background: linear-gradient(135deg, #f0f4ff, #faf5ff);
+    border: 1px solid #c7d2fe;
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+.btn-review-submit {
+    border-radius: 10px;
+    padding: 8px 24px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+.btn-review-submit:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Review Cards */
+.review-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+.review-card:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.08);
+}
+.review-card.user-own-review {
+    border-color: #818cf8;
+    background: linear-gradient(135deg, #eef2ff, #fefce8);
+}
+.review-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e2e8f0;
+}
+.review-avatar-placeholder {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #a78bfa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+}
+.review-stars { color: #f59e0b; font-size: 0.85rem; }
+.review-date { font-size: 0.78rem; color: #94a3b8; }
+.review-comment { color: #475569; font-size: 0.92rem; line-height: 1.55; margin-top: 8px; }
+.review-actions { margin-top: 8px; }
+.review-actions .btn { font-size: 0.78rem; padding: 2px 10px; border-radius: 6px; }
+
+/* No reviews state */
+.no-reviews-state {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #94a3b8;
+}
+.no-reviews-state i {
+    font-size: 3rem;
+    opacity: 0.15;
+    margin-bottom: 1rem;
+}
+
+/* Animations */
+@keyframes reviewFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.review-card {
+    animation: reviewFadeIn 0.4s ease forwards;
+}
+</style>
+
+<div layout:fragment="scripts">
+<script th:inline="javascript">
+    const COURSE_ID = /*[[${course.id}]]*/ 0;
+    let selectedRating = 0;
+    const ratingLabels = ['', 'Rất tệ 😞', 'Tệ 😕', 'Bình thường 😐', 'Tốt 😊', 'Tuyệt vời 🤩'];
+
+    // ===== Init =====
+    document.addEventListener('DOMContentLoaded', function() {
+        loadReviews();
+        setupStarInput();
+        setupCommentCounter();
+    });
+
+    // ===== Load Reviews =====
+    function loadReviews() {
+        fetch('/api/reviews/course/' + COURSE_ID)
+            .then(r => r.json())
+            .then(data => {
+                renderSummary(data);
+                renderDistribution(data.distribution, data.totalReviews);
+                renderReviewList(data.reviews);
+                updateSidebarRating(data.avgRating, data.totalReviews);
+
+                // Show review form if user can review
+                if (data.canReview) {
+                    document.getElementById('reviewFormWrapper').style.display = 'block';
+                }
+
+                // Show user's existing review with edit option
+                if (data.hasReviewed && data.userReview) {
+                    renderUserReview(data.userReview);
+                }
+
+                document.getElementById('reviewLoadingState').style.display = 'none';
+            })
+            .catch(err => {
+                console.error('Error loading reviews:', err);
+                document.getElementById('reviewLoadingState').innerHTML =
+                    '<i class="fas fa-exclamation-circle text-danger me-2"></i>Không thể tải đánh giá';
+            });
+    }
+
+    // ===== Render Summary =====
+    function renderSummary(data) {
+        if (data.totalReviews > 0) {
+            document.getElementById('reviewSummary').style.display = 'block';
+            document.getElementById('reviewAvgScore').textContent = data.avgRating;
+            document.getElementById('reviewAvgStars').innerHTML = renderStarsHtml(data.avgRating);
+            document.getElementById('reviewTotalText').textContent = data.totalReviews + ' đánh giá';
+            document.getElementById('reviewCountBadge').textContent = data.totalReviews + ' đánh giá';
+        }
+    }
+
+    // ===== Render Distribution =====
+    function renderDistribution(dist, total) {
+        if (!dist || total === 0) return;
+        let html = '';
+        for (let i = 5; i >= 1; i--) {
+            const count = dist[i] || 0;
+            const pct = Math.round((count / total) * 100);
+            html += `<div class="review-dist-row">
+                <span class="review-dist-label">${i} <i class="fas fa-star" style="color:#f59e0b;font-size:0.7rem;"></i></span>
+                <div class="review-dist-bar-bg"><div class="review-dist-bar" style="width:${pct}%"></div></div>
+                <span class="review-dist-count">${count}</span>
+            </div>`;
+        }
+        document.getElementById('reviewDistribution').innerHTML = html;
+    }
+
+    // ===== Render Reviews =====
+    function renderReviewList(reviews) {
+        const container = document.getElementById('reviewList');
+        if (!reviews || reviews.length === 0) {
+            container.innerHTML = `<div class="no-reviews-state">
+                <i class="fas fa-comment-dots d-block"></i>
+                <h6>Chưa có đánh giá nào</h6>
+                <p class="mb-0 small">Hãy là người đầu tiên đánh giá khóa học này!</p>
+            </div>`;
+            return;
+        }
+        container.innerHTML = reviews.map((r, i) => renderReviewCard(r, i)).join('');
+    }
+
+    function renderReviewCard(r, index) {
+        const avatar = r.avatar
+            ? `<img src="${r.avatar}" class="review-avatar" alt="${r.fullname || r.username}">`
+            : `<div class="review-avatar-placeholder">${(r.fullname || r.username || '?').charAt(0).toUpperCase()}</div>`;
+        const name = r.fullname || r.username || 'Ẩn danh';
+        const date = new Date(r.createdAt).toLocaleDateString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric' });
+        return `<div class="review-card" style="animation-delay:${index * 0.08}s">
+            <div class="d-flex align-items-start gap-3">
+                ${avatar}
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong style="color:#1e293b">${escapeHtml(name)}</strong>
+                            <div class="review-stars">${renderStarsHtml(r.rating)}</div>
+                        </div>
+                        <span class="review-date">${date}</span>
+                    </div>
+                    ${r.comment ? `<div class="review-comment">${escapeHtml(r.comment)}</div>` : ''}
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // ===== User's Own Review =====
+    function renderUserReview(review) {
+        const card = document.getElementById('userReviewCard');
+        const name = review.fullname || review.username || 'Bạn';
+        const date = new Date(review.createdAt).toLocaleDateString('vi-VN');
+        card.style.display = 'block';
+        card.innerHTML = `
+            <div class="review-form-card" style="border-color:#818cf8;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-check-circle text-success me-2"></i>Đánh giá của bạn</h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="enableEditReview()"><i class="fas fa-edit"></i> Sửa</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReview(${review.id})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="review-stars mb-1">${renderStarsHtml(review.rating)}</div>
+                ${review.comment ? `<div class="review-comment">${escapeHtml(review.comment)}</div>` : ''}
+                <small class="text-muted">${date}</small>
+            </div>`;
+    }
+
+    function enableEditReview() {
+        document.getElementById('userReviewCard').style.display = 'none';
+        document.getElementById('reviewFormWrapper').style.display = 'block';
+    }
+
+    // ===== Star Input Setup =====
+    function setupStarInput() {
+        const stars = document.querySelectorAll('.star-input');
+        stars.forEach(star => {
+            star.addEventListener('mouseenter', function() {
+                const val = parseInt(this.dataset.value);
+                stars.forEach(s => {
+                    const sv = parseInt(s.dataset.value);
+                    s.classList.toggle('hovered', sv <= val);
+                });
+            });
+            star.addEventListener('mouseleave', function() {
+                stars.forEach(s => s.classList.remove('hovered'));
+            });
+            star.addEventListener('click', function() {
+                selectedRating = parseInt(this.dataset.value);
+                stars.forEach(s => {
+                    const sv = parseInt(s.dataset.value);
+                    if (sv <= selectedRating) {
+                        s.classList.add('active');
+                        s.querySelector('i').className = 'fas fa-star';
+                    } else {
+                        s.classList.remove('active');
+                        s.querySelector('i').className = 'far fa-star';
+                    }
+                });
+                document.getElementById('ratingLabel').textContent = ratingLabels[selectedRating];
+                document.getElementById('btnSubmitReview').disabled = false;
+            });
+        });
+    }
+
+    function setupCommentCounter() {
+        const textarea = document.getElementById('reviewComment');
+        const counter = document.getElementById('commentCharCount');
+        textarea.addEventListener('input', () => {
+            counter.textContent = textarea.value.length;
+        });
+    }
+
+    // ===== Submit Review =====
+    function submitReview() {
+        if (selectedRating === 0) return;
+        const comment = document.getElementById('reviewComment').value.trim();
+        const btn = document.getElementById('btnSubmitReview');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi...';
+
+        fetch('/api/reviews/course/' + COURSE_ID, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ rating: selectedRating, comment: comment })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Show success toast
+                showToast(data.message, 'success');
+                // Reload reviews
+                loadReviews();
+                // Hide form
+                document.getElementById('reviewFormWrapper').style.display = 'none';
+                selectedRating = 0;
+                document.getElementById('reviewComment').value = '';
+            } else {
+                showToast(data.error || 'Lỗi khi gửi đánh giá', 'danger');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Gửi đánh giá';
+        })
+        .catch(err => {
+            showToast('Lỗi kết nối', 'danger');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Gửi đánh giá';
+        });
+    }
+
+    // ===== Delete Review =====
+    function deleteReview(reviewId) {
+        if (!confirm('Bạn chắc chắn muốn xóa đánh giá này?')) return;
+        fetch('/api/reviews/' + reviewId, {
+            method: 'DELETE',
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Đã xóa đánh giá', 'success');
+                loadReviews();
+                document.getElementById('userReviewCard').style.display = 'none';
+            }
+        });
+    }
+
+    // ===== Sidebar Rating =====
+    function updateSidebarRating(avg, total) {
+        const el = document.getElementById('sidebarRating');
+        if (total > 0) {
+            el.innerHTML = `<span style="color:#f59e0b;">${renderStarsHtml(avg)}</span> <strong>${avg}</strong>/5 <small class="text-muted">(${total})</small>`;
+        } else {
+            el.textContent = 'Chưa có đánh giá';
+        }
+    }
+
+    // ===== Helpers =====
+    function renderStarsHtml(rating) {
+        let html = '';
+        for (let i = 1; i <= 5; i++) {
+            if (i <= Math.floor(rating)) {
+                html += '<i class="fas fa-star"></i>';
+            } else if (i - 0.5 <= rating) {
+                html += '<i class="fas fa-star-half-alt"></i>';
+            } else {
+                html += '<i class="far fa-star"></i>';
+            }
+        }
+        return html;
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = 'alert alert-' + type + ' position-fixed shadow-lg';
+        toast.style.cssText = 'top:20px;right:20px;z-index:9999;min-width:300px;animation:reviewFadeIn 0.3s ease;';
+        toast.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + ' me-2"></i>' + message;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+</script>
+</div>
 </body>
 </html>
+

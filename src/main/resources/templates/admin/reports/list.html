@@ -5,355 +5,1058 @@
 
 <head>
     <title>Báo cáo thống kê</title>
+    <style>
+        /* ===== Report Page Styles ===== */
+
+        /* Fixed-height chart containers — KEY FIX for the stretching bug */
+        .rpt-chart-box {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        .rpt-chart-box canvas {
+            display: block;
+            width: 100% !important;
+        }
+        .rpt-chart-lg  { height: 360px; }
+        .rpt-chart-md  { height: 280px; }
+        .rpt-chart-sm  { height: 220px; }
+
+        /* Glassmorphism cards */
+        .rpt-glass {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .rpt-glass:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+        }
+
+        /* KPI Stat cards with top accent bar */
+        .rpt-kpi {
+            position: relative;
+            overflow: hidden;
+        }
+        .rpt-kpi::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+        .rpt-kpi.kpi-revenue::before  { background: linear-gradient(90deg, #10b981, #34d399); }
+        .rpt-kpi.kpi-orders::before   { background: linear-gradient(90deg, #6366f1, #818cf8); }
+        .rpt-kpi.kpi-users::before    { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .rpt-kpi.kpi-courses::before  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .rpt-kpi.kpi-lecturers::before{ background: linear-gradient(90deg, #ec4899, #f472b6); }
+        .rpt-kpi.kpi-enroll::before   { background: linear-gradient(90deg, #14b8a6, #2dd4bf); }
+
+        .kpi-icon {
+            width: 48px; height: 48px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .kpi-icon.ic-revenue  { background: rgba(16,185,129,0.15); color: #34d399; }
+        .kpi-icon.ic-orders   { background: rgba(99,102,241,0.15); color: #818cf8; }
+        .kpi-icon.ic-users    { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .kpi-icon.ic-courses  { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .kpi-icon.ic-lecturers{ background: rgba(236,72,153,0.15); color: #f472b6; }
+        .kpi-icon.ic-enroll   { background: rgba(20,184,166,0.15); color: #2dd4bf; }
+
+        .kpi-value {
+            font-size: 1.7rem;
+            font-weight: 800;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .kpi-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .kpi-sub {
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+
+        /* Section header */
+        .rpt-section-title {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .rpt-section-title i { color: #818cf8; }
+
+        /* Filter bar */
+        .rpt-filter-bar {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+        }
+
+        /* Rank badges */
+        .rpt-rank {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        .rpt-rank-1 { background: linear-gradient(135deg,#f59e0b,#d97706); color:#fff; box-shadow: 0 2px 8px rgba(245,158,11,0.3); }
+        .rpt-rank-2 { background: linear-gradient(135deg,#94a3b8,#64748b); color:#fff; }
+        .rpt-rank-3 { background: linear-gradient(135deg,#cd7f32,#a0522d); color:#fff; }
+        .rpt-rank-n { background: #334155; color: #94a3b8; }
+
+        /* Topic bar */
+        .rpt-topic-bar-bg { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden; }
+        .rpt-topic-bar    { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+
+        /* Divider */
+        .rpt-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); }
+
+        /* Smooth entrance */
+        @keyframes rptFadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .rpt-animate { animation: rptFadeUp 0.5s ease-out forwards; }
+        .rpt-d1 { animation-delay: 0.05s; }
+        .rpt-d2 { animation-delay: 0.1s; }
+        .rpt-d3 { animation-delay: 0.15s; }
+        .rpt-d4 { animation-delay: 0.2s; }
+        .rpt-d5 { animation-delay: 0.25s; }
+        .rpt-d6 { animation-delay: 0.3s; }
+
+        /* Period toggle buttons */
+        .rpt-period-toggle {
+            display: flex;
+            gap: 6px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .rpt-period-btn {
+            padding: 7px 16px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #94a3b8;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .rpt-period-btn:hover {
+            color: #e2e8f0;
+            background: rgba(255,255,255,0.06);
+        }
+        .rpt-period-btn.active {
+            color: #fff;
+            background: linear-gradient(135deg, #6366f1, #818cf8);
+            border-color: rgba(99,102,241,0.3);
+            box-shadow: 0 2px 8px rgba(99,102,241,0.25);
+        }
+
+        /* ===== AI Analysis Section ===== */
+        .ai-section {
+            position: relative;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(129, 140, 248, 0.15);
+            border-radius: 20px;
+            padding: 2rem;
+            overflow: hidden;
+        }
+        .ai-section::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #a78bfa, #ec4899, #f59e0b, #34d399);
+            background-size: 300% 100%;
+            animation: aiGradientShift 4s ease infinite;
+        }
+        @keyframes aiGradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .ai-section-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 1.5rem;
+        }
+        .ai-icon-wrap {
+            width: 52px; height: 52px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(167,139,250,0.2));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem;
+            position: relative;
+        }
+        .ai-icon-wrap::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #6366f1, #a78bfa);
+            z-index: -1;
+            opacity: 0.3;
+            filter: blur(6px);
+        }
+        .ai-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #e2e8f0;
+            margin: 0;
+        }
+        .ai-subtitle {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin: 0;
+        }
+        .ai-body {
+            color: #cbd5e1;
+            line-height: 1.7;
+            font-size: 0.92rem;
+        }
+        .ai-body strong {
+            color: #e2e8f0;
+        }
+        .ai-body p {
+            margin-bottom: 0.6rem;
+        }
+        .ai-insight-item {
+            padding: 0.7rem 1rem;
+            margin-bottom: 0.6rem;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border-left: 3px solid rgba(99,102,241,0.4);
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .ai-emoji { font-size: 1.2rem; flex-shrink: 0; }
+        .ai-btn-analyze {
+            background: linear-gradient(135deg, #6366f1, #a78bfa);
+            border: none;
+            color: #fff;
+            padding: 10px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ai-btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99,102,241,0.35);
+        }
+        .ai-btn-analyze:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        /* Loading skeleton */
+        .ai-skeleton {
+            display: none;
+        }
+        .ai-skeleton.active {
+            display: block;
+        }
+        .ai-skel-line {
+            height: 14px;
+            border-radius: 7px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background-size: 200% 100%;
+            animation: aiShimmer 1.5s ease infinite;
+            margin-bottom: 12px;
+        }
+        .ai-skel-line:nth-child(1) { width: 90%; }
+        .ai-skel-line:nth-child(2) { width: 75%; }
+        .ai-skel-line:nth-child(3) { width: 85%; }
+        .ai-skel-line:nth-child(4) { width: 60%; }
+        .ai-skel-line:nth-child(5) { width: 80%; }
+        .ai-skel-line:nth-child(6) { width: 70%; }
+        @keyframes aiShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Print-friendly */
+        @media print {
+            .sidebar, .top-header, .rpt-filter-bar, .btn, .ai-btn-analyze { display: none !important; }
+            .main-content { margin-left: 0 !important; }
+            .rpt-glass { border: 1px solid #ddd; break-inside: avoid; }
+            .ai-section { border: 1px solid #ddd; }
+        }
+    </style>
 </head>
 
 <body>
 <div layout:fragment="content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="fas fa-chart-bar me-2"></i>Báo cáo thống kê</h2>
+
+    <!-- ===== Page Header ===== -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 slide-in">
+        <div>
+            <h2 class="page-title"><i class="fas fa-chart-bar"></i> Báo cáo thống kê</h2>
+            <p class="text-muted mb-0 small"
+               th:text="${period == 'year' ? '12 tháng gần nhất' : (period == 'quarter' ? 'So sánh theo quý' : (period == 'custom' ? 'Khoảng thời gian tùy chỉnh' : '30 ngày gần nhất'))}">
+                30 ngày gần nhất
+            </p>
+        </div>
         <div class="d-flex gap-2">
-            <form method="get" action="/admin/reports" class="d-flex gap-2 align-items-center" id="reportFilterForm">
-                <select class="form-select" style="width: auto;" name="period" id="reportPeriodSelect" onchange="toggleReportCustomDateInputs()">
-                    <option value="month" th:selected="${period == 'month'}">30 ngày gần nhất</option>
-                    <option value="year" th:selected="${period == 'year'}">12 tháng gần nhất</option>
-                    <option value="quarter" th:selected="${period == 'quarter'}">So sánh theo quý</option>
-                    <option value="custom" th:selected="${period == 'custom'}">Tùy chỉnh khoảng thời gian</option>
-                </select>
-                
-                <!-- Custom date range inputs -->
-                <div id="reportCustomDateInputs" style="display: none;" class="d-flex gap-2">
-                    <input type="date" name="startDate" id="reportStartDate" class="form-control form-control-sm" 
-                           th:value="${startDate}" style="max-width: 150px;">
-                    <span class="align-self-center">đến</span>
-                    <input type="date" name="endDate" id="reportEndDate" class="form-control form-control-sm" 
-                           th:value="${endDate}" style="max-width: 150px;">
-                </div>
-                
-                <button class="btn btn-primary" type="submit">
-                    <i class="fas fa-filter me-1"></i>Lọc
-                </button>
-            </form>
-            <button class="btn btn-outline-light" onclick="window.print()">
-                <i class="fas fa-download me-2"></i>Xuất báo cáo
+            <a class="btn btn-admin btn-admin-outline" th:href="@{/admin/stats/export.xlsx(period=${period},startDate=${startDate},endDate=${endDate})}">
+                <i class="fas fa-file-excel me-1"></i>Excel
+            </a>
+            <a class="btn btn-admin btn-admin-outline" th:href="@{/admin/stats/export.pdf(period=${period},startDate=${startDate},endDate=${endDate})}">
+                <i class="fas fa-file-pdf me-1"></i>PDF
+            </a>
+            <button class="btn btn-admin btn-admin-outline" onclick="window.print()">
+                <i class="fas fa-print me-1"></i>In
             </button>
         </div>
     </div>
-    
-    <!-- Quarterly Comparison (if applicable) -->
-    <div th:if="${period == 'quarter' and stats?.quarterlyComparisons != null and !stats.quarterlyComparisons.empty}" class="admin-card mb-4">
-        <h5 class="mb-3"><i class="fas fa-chart-bar me-2"></i>So sánh theo quý</h5>
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Quý</th>
-                        <th>Doanh thu</th>
-                        <th>Số đơn hàng</th>
-                        <th>So với quý trước</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="q, iterStat : ${stats.quarterlyComparisons}">
-                        <td><strong th:text="${q.quarter}">Q1 2026</strong></td>
-                        <td><span class="text-success" th:text="${#numbers.formatDecimal(q.revenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span></td>
-                        <td><span class="badge bg-info" th:text="${q.orders}">0</span></td>
-                        <td th:if="${iterStat.index > 0}">
-                            <th:block th:with="prevRevenue=${stats.quarterlyComparisons[iterStat.index - 1].revenue}">
-                                <th:block th:if="${q.revenue.compareTo(prevRevenue) > 0}">
-                                    <span class="text-success">
-                                        <i class="fas fa-arrow-up"></i>
-                                        <span th:text="${#numbers.formatDecimal((q.revenue.subtract(prevRevenue)).divide(prevRevenue, 4, T(java.math.RoundingMode).HALF_UP).multiply(new java.math.BigDecimal('100')), 1, 'COMMA', 2, 'POINT')} + '%'">0%</span>
-                                    </span>
-                                </th:block>
-                                <th:block th:if="${q.revenue.compareTo(prevRevenue) < 0}">
-                                    <span class="text-danger">
-                                        <i class="fas fa-arrow-down"></i>
-                                        <span th:text="${#numbers.formatDecimal((prevRevenue.subtract(q.revenue)).divide(prevRevenue, 4, T(java.math.RoundingMode).HALF_UP).multiply(new java.math.BigDecimal('100')), 1, 'COMMA', 2, 'POINT')} + '%'">0%</span>
-                                    </span>
-                                </th:block>
-                                <th:block th:if="${q.revenue.compareTo(prevRevenue) == 0}">
-                                    <span class="text-muted"><i class="fas fa-minus"></i> 0%</span>
-                                </th:block>
-                            </th:block>
-                        </td>
-                        <td th:if="${iterStat.index == 0}">
-                            <span class="text-muted">-</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        
-        <!-- Quarterly Bar Chart Comparison -->
-        <div class="mt-4">
-            <h6 class="fw-bold mb-3"><i class="fas fa-chart-bar me-2"></i>Biểu đồ so sánh theo quý</h6>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <canvas id="reportQuarterlyRevenueChart" height="200"></canvas>
+
+    <!-- ===== Filter Bar ===== -->
+    <div class="rpt-filter-bar mb-4" style="padding: 1.2rem 1.5rem;">
+        <form method="get" th:action="@{/admin/reports}" id="reportFilterForm">
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+                <div class="d-flex align-items-center gap-2 me-2">
+                    <i class="fas fa-calendar-alt" style="color:#818cf8; font-size:1.1rem;"></i>
+                    <span style="color:#94a3b8; font-weight:600; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px;">Thời gian</span>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <canvas id="reportQuarterlyOrdersChart" height="200"></canvas>
+                <div class="rpt-period-toggle" id="periodToggle">
+                    <button type="button" class="rpt-period-btn" data-value="month" th:classappend="${period == 'month'} ? 'active' : ''" onclick="selectPeriod('month')">
+                        <i class="fas fa-calendar-week me-1"></i>30 ngày
+                    </button>
+                    <button type="button" class="rpt-period-btn" data-value="year" th:classappend="${period == 'year'} ? 'active' : ''" onclick="selectPeriod('year')">
+                        <i class="fas fa-calendar me-1"></i>12 tháng
+                    </button>
+                    <button type="button" class="rpt-period-btn" data-value="quarter" th:classappend="${period == 'quarter'} ? 'active' : ''" onclick="selectPeriod('quarter')">
+                        <i class="fas fa-chart-pie me-1"></i>Theo quý
+                    </button>
+                    <button type="button" class="rpt-period-btn" data-value="custom" th:classappend="${period == 'custom'} ? 'active' : ''" onclick="selectPeriod('custom')">
+                        <i class="fas fa-sliders-h me-1"></i>Tùy chỉnh
+                    </button>
+                </div>
+                <input type="hidden" name="period" id="reportPeriodSelect" th:value="${period}" />
+                <div id="reportCustomDateInputs" class="d-flex gap-2 align-items-center" th:style="${period == 'custom'} ? '' : 'display:none;'" style="transition: all 0.3s ease;">
+                    <div class="input-group input-group-sm" style="max-width:160px;">
+                        <span class="input-group-text" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:#94a3b8;"><i class="fas fa-calendar-day"></i></span>
+                        <input type="date" name="startDate" id="reportStartDate" class="form-control form-control-sm"
+                               th:value="${startDate}" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:#e2e8f0;">
+                    </div>
+                    <span style="color:#64748b; font-size:0.82rem;">→</span>
+                    <div class="input-group input-group-sm" style="max-width:160px;">
+                        <span class="input-group-text" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:#94a3b8;"><i class="fas fa-calendar-day"></i></span>
+                        <input type="date" name="endDate" id="reportEndDate" class="form-control form-control-sm"
+                               th:value="${endDate}" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:#e2e8f0;">
+                    </div>
+                </div>
+                <button class="btn btn-admin btn-admin-primary" type="submit" style="border-radius:10px; padding:8px 22px;">
+                    <i class="fas fa-search me-1"></i>Xem báo cáo
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ===== KPI Row ===== -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="rpt-glass rpt-kpi kpi-revenue h-100 rpt-animate rpt-d1">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon ic-revenue"><i class="fas fa-money-bill-wave"></i></div>
+                    <div>
+                        <div class="kpi-label">Doanh thu</div>
+                        <div class="kpi-value" th:text="${#numbers.formatDecimal(stats?.totalRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="rpt-glass rpt-kpi kpi-orders h-100 rpt-animate rpt-d2">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon ic-orders"><i class="fas fa-shopping-cart"></i></div>
+                    <div>
+                        <div class="kpi-label">Đơn hàng</div>
+                        <div class="kpi-value" th:text="${stats?.totalPaidOrders ?: 0}">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="rpt-glass rpt-kpi kpi-users h-100 rpt-animate rpt-d3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon ic-users"><i class="fas fa-users"></i></div>
+                    <div>
+                        <div class="kpi-label">Người dùng</div>
+                        <div class="kpi-value" th:text="${stats?.totalUsers ?: 0}">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="rpt-glass rpt-kpi kpi-courses h-100 rpt-animate rpt-d4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon ic-courses"><i class="fas fa-book"></i></div>
+                    <div>
+                        <div class="kpi-label">Khóa học</div>
+                        <div class="kpi-value" th:text="${stats?.totalCourses ?: 0}">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="rpt-glass rpt-kpi kpi-lecturers h-100 rpt-animate rpt-d5">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon ic-lecturers"><i class="fas fa-chalkboard-teacher"></i></div>
+                    <div>
+                        <div class="kpi-label">Giảng viên</div>
+                        <div class="kpi-value" th:text="${stats?.totalLecturers ?: 0}">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-4 col-md-6">
+            <div class="rpt-glass rpt-kpi kpi-enroll h-100 rpt-animate rpt-d6">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon ic-enroll"><i class="fas fa-user-graduate"></i></div>
+                    <div>
+                        <div class="kpi-label">Tổng đăng ký</div>
+                        <div class="kpi-value" th:text="${stats?.totalEnrollments ?: 0}">0</div>
+                    </div>
+                </div>
+                <div class="kpi-sub mt-1" th:if="${stats?.newEnrollmentsThisPeriod > 0}">
+                    <i class="fas fa-arrow-up text-success"></i> +<span th:text="${stats.newEnrollmentsThisPeriod}">0</span> mới
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- No data message for quarterly -->
-    <div th:if="${period == 'quarter' and (stats?.quarterlyComparisons == null or stats.quarterlyComparisons.empty)}" class="admin-card mb-4">
-        <div class="alert alert-warning text-center">
-            <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
-            <h5>Không có dữ liệu theo quý</h5>
-            <p class="mb-0">Không tìm thấy dữ liệu đơn hàng trong 4 quý gần nhất. Vui lòng thử lại sau hoặc chọn khoảng thời gian khác.</p>
-        </div>
-    </div>
 
-    <!-- Revenue Overview -->
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="admin-card">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Doanh thu</h6>
-                        <h3 class="mb-0 text-success" th:text="${#numbers.formatDecimal(stats.totalRevenue, 0, 'COMMA', 0, 'POINT')} + 'đ'">0đ</h3>
-                        <small class="text-muted" th:text="${period == 'year' ? '12 tháng gần nhất' : (period == 'quarter' ? 'Theo quý' : (period == 'custom' ? 'Tùy chỉnh' : '30 ngày gần nhất'))}"></small>
-                        <small th:if="${stats.totalRevenue == null or stats.totalRevenue.compareTo(T(java.math.BigDecimal).ZERO) == 0}" class="d-block text-warning mt-1">
+    <!-- ===== Revenue + Avg Per Order Summary ===== -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="rpt-glass" style="background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(52,211,153,0.04)); border-color: rgba(16,185,129,0.12);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon ic-revenue" style="width:56px;height:56px;font-size:1.4rem;"><i class="fas fa-chart-line"></i></div>
+                    <div>
+                        <div class="kpi-label">Tổng doanh thu trong kỳ</div>
+                        <h3 class="fw-bold text-success mb-0" th:text="${#numbers.formatDecimal(stats?.totalRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
+                        <small class="text-muted" th:if="${stats?.totalRevenue == null or stats.totalRevenue.compareTo(T(java.math.BigDecimal).ZERO) == 0}">
                             <i class="fas fa-info-circle"></i> Chưa có doanh thu
                         </small>
                     </div>
-                    <div class="text-success">
-                        <i class="fas fa-chart-line fa-2x"></i>
-                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="admin-card">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Số đơn hàng</h6>
-                        <h3 class="mb-0" th:text="${stats.totalPaidOrders}">0</h3>
-                        <small class="text-muted" th:text="${period == 'year' ? '12 tháng gần nhất' : (period == 'quarter' ? 'Theo quý' : (period == 'custom' ? 'Tùy chỉnh' : '30 ngày gần nhất'))}"></small>
-                        <small th:if="${stats.totalPaidOrders == 0}" class="d-block text-warning mt-1">
-                            <i class="fas fa-info-circle"></i> Chưa có đơn hàng nào
-                        </small>
-                    </div>
-                    <div class="text-info">
-                        <i class="fas fa-shopping-cart fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="admin-card">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <h6 class="text-muted mb-2">Tổng người dùng</h6>
-                        <h3 class="mb-0" th:text="${stats.totalUsers}">0</h3>
-                        <small class="text-muted">Người dùng đã đăng ký</small>
-                    </div>
-                    <div class="text-primary">
-                        <i class="fas fa-users fa-2x"></i>
+        <div class="col-md-6">
+            <div class="rpt-glass" style="background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(129,140,248,0.04)); border-color: rgba(99,102,241,0.12);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="kpi-icon ic-orders" style="width:56px;height:56px;font-size:1.4rem;"><i class="fas fa-receipt"></i></div>
+                    <div>
+                        <div class="kpi-label">Trung bình mỗi đơn hàng</div>
+                        <h3 class="fw-bold mb-0" style="color:#818cf8;" th:text="${#numbers.formatDecimal(stats?.avgRevenuePerOrder ?: 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Charts Row -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="admin-card">
-                <h5 class="mb-3"><i class="fas fa-trophy me-2 text-warning"></i>Top khóa học bán chạy</h5>
-                <div th:if="${stats != null and stats.topCourses != null and !stats.topCourses.isEmpty()}" class="row">
-                    <div th:each="course, iterStat : ${stats.topCourses}" class="col-md-6 mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span th:text="${course.title}">Course Title</span>
-                            <span class="badge bg-primary" th:text="${course.enrollments}">0</span>
-                        </div>
-                        <div class="progress" style="height: 12px;">
-                            <div class="progress-bar bg-primary" 
-                                 th:style="'width: ' + ${course.enrollments * 100 / stats.topCourses[0].enrollments} + '%'"></div>
-                        </div>
-                    </div>
+    <!-- ===== Main Charts Row: Revenue Line + Enrollment Bar ===== -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="rpt-glass h-100">
+                <h6 class="rpt-section-title mb-3"><i class="fas fa-chart-area"></i> Biểu đồ doanh thu &amp; đơn hàng</h6>
+                <div th:if="${stats != null and stats.labels != null and !stats.labels.empty}" class="rpt-chart-box rpt-chart-lg">
+                    <canvas id="rptRevenueChart"></canvas>
                 </div>
-                <div th:if="${stats == null or stats.topCourses == null or stats.topCourses.isEmpty()}" class="text-center text-muted py-5">
-                    <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
-                    <h6>Chưa có dữ liệu khóa học</h6>
-                    <p class="mb-0 small">Không tìm thấy khóa học nào trong khoảng thời gian được chọn.</p>
+                <div th:if="${stats == null or stats.labels == null or stats.labels.empty}" class="text-center py-5">
+                    <i class="fas fa-chart-area fa-3x mb-3 opacity-25"></i>
+                    <h6 class="text-muted">Chưa có dữ liệu biểu đồ</h6>
+                    <p class="text-muted small mb-0">Không tìm thấy dữ liệu trong khoảng thời gian đã chọn.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="rpt-glass h-100">
+                <h6 class="rpt-section-title mb-3"><i class="fas fa-user-plus"></i> Xu hướng đăng ký</h6>
+                <div th:if="${stats != null and stats.labels != null and !stats.labels.empty}" class="rpt-chart-box rpt-chart-md">
+                    <canvas id="rptEnrollChart"></canvas>
+                </div>
+                <div th:if="${stats == null or stats.labels == null or stats.labels.empty}" class="text-center py-5">
+                    <i class="fas fa-user-plus fa-3x mb-3 opacity-25"></i>
+                    <p class="text-muted small mb-0">Chưa có dữ liệu.</p>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- ===== Topic Distribution + Best Sellers ===== -->
+    <div class="row g-4 mb-4">
+        <!-- Topic Doughnut -->
+        <div class="col-lg-5">
+            <div class="rpt-glass h-100">
+                <h6 class="rpt-section-title mb-3"><i class="fas fa-tags text-info"></i> Phân bố theo chủ đề</h6>
+                <div th:if="${stats?.topicDistributions != null and !stats.topicDistributions.empty}">
+                    <div class="rpt-chart-box rpt-chart-sm mb-3">
+                        <canvas id="rptTopicChart"></canvas>
+                    </div>
+                    <div th:each="td : ${stats.topicDistributions}" class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-semibold" th:text="${td.topicName}">Topic</span>
+                            <span class="text-muted" th:text="${td.courseCount} + ' khóa · ' + ${td.enrollmentCount} + ' ĐK'">0</span>
+                        </div>
+                        <div class="rpt-topic-bar-bg">
+                            <div class="rpt-topic-bar"
+                                 th:style="'width:' + ${td.courseCount * 100 / (stats.totalCourses > 0 ? stats.totalCourses : 1)} + '%'"
+                                 style="background: linear-gradient(90deg,#6366f1,#818cf8);"></div>
+                        </div>
+                    </div>
+                </div>
+                <div th:if="${stats == null or stats.topicDistributions == null or stats.topicDistributions.empty}" class="text-center text-muted py-4">
+                    <i class="fas fa-tags fa-2x mb-2 opacity-25"></i>
+                    <p class="mb-0 small">Chưa có chủ đề nào</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Best Selling Courses -->
+        <div class="col-lg-7">
+            <div class="rpt-glass h-100">
+                <h6 class="rpt-section-title mb-3"><i class="fas fa-fire text-danger"></i> Top khóa học bán chạy (Doanh thu)</h6>
+                <div th:if="${stats?.bestSellingCourses != null and !stats.bestSellingCourses.empty}">
+                    <div class="table-responsive">
+                        <table class="table admin-table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px">#</th>
+                                    <th>Khóa học</th>
+                                    <th>Giảng viên</th>
+                                    <th class="text-center">Đã bán</th>
+                                    <th class="text-end">Doanh thu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="course, iter : ${stats.bestSellingCourses}" th:if="${iter.index < 10}">
+                                    <td>
+                                        <span class="rpt-rank"
+                                              th:classappend="${iter.index == 0} ? 'rpt-rank-1' : (${iter.index == 1} ? 'rpt-rank-2' : (${iter.index == 2} ? 'rpt-rank-3' : 'rpt-rank-n'))"
+                                              th:text="${iter.index + 1}">1</span>
+                                    </td>
+                                    <td class="text-truncate" style="max-width:220px;" th:text="${course.title}" th:title="${course.title}">Course</td>
+                                    <td><small class="text-muted" th:text="${course.creatorName}">GV</small></td>
+                                    <td class="text-center"><span class="badge-admin badge-admin-info" th:text="${course.soldCount}">0</span></td>
+                                    <td class="text-end fw-bold text-success" th:text="${#numbers.formatDecimal(course.totalSales, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div th:if="${stats == null or stats.bestSellingCourses == null or stats.bestSellingCourses.empty}" class="text-center text-muted py-4">
+                    <i class="fas fa-box-open fa-2x mb-2 opacity-25"></i>
+                    <p class="mb-0 small">Chưa có dữ liệu bán hàng</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Top Courses by Enrollment ===== -->
+    <div class="rpt-glass mb-4">
+        <h6 class="rpt-section-title mb-3"><i class="fas fa-trophy text-warning"></i> Top khóa học đăng ký nhiều nhất</h6>
+        <div th:if="${stats != null and stats.topCourses != null and !stats.topCourses.empty}" class="row g-3">
+            <div th:each="course, iterStat : ${stats.topCourses}" class="col-lg-6">
+                <div class="d-flex align-items-center gap-3 p-3 rounded-3" style="background:rgba(255,255,255,0.03);">
+                    <span class="rpt-rank"
+                          th:classappend="${iterStat.index == 0} ? 'rpt-rank-1' : (${iterStat.index == 1} ? 'rpt-rank-2' : (${iterStat.index == 2} ? 'rpt-rank-3' : 'rpt-rank-n'))"
+                          th:text="${iterStat.index + 1}">1</span>
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="fw-semibold text-truncate" th:text="${course.title}" th:title="${course.title}">Course</div>
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <div class="rpt-topic-bar-bg flex-grow-1">
+                                <div class="rpt-topic-bar"
+                                     th:style="'width:' + ${course.enrollments * 100 / (stats.topCourses[0].enrollments > 0 ? stats.topCourses[0].enrollments : 1)} + '%'"
+                                     style="background: linear-gradient(90deg,#f59e0b,#fbbf24);"></div>
+                            </div>
+                            <span class="badge-admin badge-admin-warning" th:text="${course.enrollments}">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:if="${stats == null or stats.topCourses == null or stats.topCourses.empty}" class="text-center text-muted py-4">
+            <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+            <h6>Chưa có dữ liệu khóa học</h6>
+            <p class="mb-0 small">Không tìm thấy khóa học nào trong khoảng thời gian được chọn.</p>
+        </div>
+    </div>
+
+    <!-- ===== Quarterly Section ===== -->
+    <div th:if="${period == 'quarter'}" class="rpt-glass mb-4">
+        <h6 class="rpt-section-title mb-3"><i class="fas fa-chart-bar"></i> So sánh theo quý</h6>
+
+        <div th:if="${stats?.quarterlyComparisons != null and !stats.quarterlyComparisons.empty}">
+            <!-- Quarterly Table -->
+            <div class="table-responsive mb-4">
+                <table class="table admin-table">
+                    <thead>
+                        <tr>
+                            <th>Quý</th>
+                            <th>Doanh thu</th>
+                            <th>Số đơn hàng</th>
+                            <th>So với quý trước</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="q, iterStat : ${stats.quarterlyComparisons}">
+                            <td><strong th:text="${q.quarter}">Q1 2026</strong></td>
+                            <td><span class="text-success fw-bold" th:text="${#numbers.formatDecimal(q.revenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span></td>
+                            <td><span class="badge-admin badge-admin-info" th:text="${q.orders}">0</span></td>
+                            <td th:if="${iterStat.index == 0}"><span class="text-muted">-</span></td>
+                            <td th:if="${iterStat.index > 0}">
+                                <th:block th:with="prevRevenue=${stats.quarterlyComparisons[iterStat.index - 1].revenue}">
+                                    <th:block th:if="${prevRevenue.compareTo(T(java.math.BigDecimal).ZERO) == 0}">
+                                        <span class="text-muted"><i class="fas fa-minus"></i> N/A</span>
+                                    </th:block>
+                                    <th:block th:if="${prevRevenue.compareTo(T(java.math.BigDecimal).ZERO) != 0 and q.revenue.compareTo(prevRevenue) > 0}">
+                                        <span class="text-success">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span th:text="${#numbers.formatDecimal((q.revenue.subtract(prevRevenue)).divide(prevRevenue, 4, T(java.math.RoundingMode).HALF_UP).multiply(new java.math.BigDecimal('100')), 1, 'COMMA', 2, 'POINT')} + '%'">0%</span>
+                                        </span>
+                                    </th:block>
+                                    <th:block th:if="${prevRevenue.compareTo(T(java.math.BigDecimal).ZERO) != 0 and q.revenue.compareTo(prevRevenue) < 0}">
+                                        <span class="text-danger">
+                                            <i class="fas fa-arrow-down"></i>
+                                            <span th:text="${#numbers.formatDecimal((prevRevenue.subtract(q.revenue)).divide(prevRevenue, 4, T(java.math.RoundingMode).HALF_UP).multiply(new java.math.BigDecimal('100')), 1, 'COMMA', 2, 'POINT')} + '%'">0%</span>
+                                        </span>
+                                    </th:block>
+                                    <th:block th:if="${prevRevenue.compareTo(T(java.math.BigDecimal).ZERO) != 0 and q.revenue.compareTo(prevRevenue) == 0}">
+                                        <span class="text-muted"><i class="fas fa-minus"></i> 0%</span>
+                                    </th:block>
+                                </th:block>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Quarterly Charts -->
+            <div class="rpt-divider mb-4"></div>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h6 class="rpt-section-title mb-3"><i class="fas fa-dollar-sign text-success"></i> Doanh thu theo quý</h6>
+                    <div class="rpt-chart-box rpt-chart-md">
+                        <canvas id="rptQRevenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="rpt-section-title mb-3"><i class="fas fa-box text-info"></i> Đơn hàng theo quý</h6>
+                    <div class="rpt-chart-box rpt-chart-md">
+                        <canvas id="rptQOrdersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${stats?.quarterlyComparisons == null or stats.quarterlyComparisons.empty}" class="text-center py-4">
+            <i class="fas fa-exclamation-circle fa-2x mb-3 opacity-25"></i>
+            <h6 class="text-muted">Không có dữ liệu theo quý</h6>
+            <p class="mb-0 text-muted small">Không tìm thấy dữ liệu đơn hàng trong 4 quý gần nhất.</p>
+        </div>
+
+        <!-- Quarterly Best Sellers -->
+        <div th:if="${stats?.quarterlyBestSellers != null and !stats.quarterlyBestSellers.empty}" class="mt-4">
+            <div class="rpt-divider mb-4"></div>
+            <h6 class="rpt-section-title mb-3"><i class="fas fa-star text-warning"></i> Khóa học bán chạy nhất theo quý</h6>
+            <div class="row g-3">
+                <div class="col-md-6 col-lg-3" th:each="qbs : ${stats.quarterlyBestSellers}">
+                    <div class="rpt-glass h-100" style="border-left: 3px solid #6366f1;">
+                        <h6 class="fw-bold mb-3" style="color:#818cf8;" th:text="${qbs.quarter}">Q1 2026</h6>
+                        <div th:if="${qbs.courses == null or qbs.courses.empty}" class="text-muted small">Không có dữ liệu</div>
+                        <div th:each="course, iter : ${qbs.courses}" class="d-flex align-items-center mb-2">
+                            <span class="rpt-rank me-2"
+                                  th:classappend="${iter.index == 0} ? 'rpt-rank-1' : (${iter.index == 1} ? 'rpt-rank-2' : (${iter.index == 2} ? 'rpt-rank-3' : 'rpt-rank-n'))"
+                                  th:text="${iter.index + 1}">1</span>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="text-truncate small fw-semibold" th:text="${course.title}" th:title="${course.title}">Course</div>
+                                <small class="text-muted" th:text="${course.soldCount} + ' bán | ' + ${#numbers.formatDecimal(course.totalSales, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Quarterly Data alert -->
+    <div th:if="${period == 'quarter' and (stats?.quarterlyComparisons == null or stats.quarterlyComparisons.empty)}" class="rpt-glass mb-4">
+        <div class="text-center py-4">
+            <i class="fas fa-info-circle fa-2x mb-3" style="color:#fbbf24;"></i>
+            <h5 style="color:#fbbf24;">Không có dữ liệu theo quý</h5>
+            <p class="text-muted mb-0">Không tìm thấy dữ liệu đơn hàng trong 4 quý gần nhất. Vui lòng thử lại sau.</p>
+        </div>
+    </div>
+
+    <!-- ===== AI Analysis Section ===== -->
+    <div class="ai-section mb-4 rpt-animate" style="animation-delay: 0.4s;" id="aiAnalysisSection">
+        <div class="ai-section-header">
+            <div class="ai-icon-wrap">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h5 class="ai-title">🧠 AI Phân tích kinh doanh</h5>
+                <p class="ai-subtitle">Gemini AI phân tích dữ liệu và đưa ra nhận xét thông minh</p>
+            </div>
+            <button class="ai-btn-analyze" id="btnAiAnalyze" onclick="loadAiAnalysis()">
+                <i class="fas fa-magic"></i> Phân tích AI
+            </button>
+        </div>
+
+        <!-- Loading Skeleton -->
+        <div class="ai-skeleton" id="aiSkeleton">
+            <div class="ai-skel-line"></div>
+            <div class="ai-skel-line"></div>
+            <div class="ai-skel-line"></div>
+            <div class="ai-skel-line"></div>
+            <div class="ai-skel-line"></div>
+            <div class="ai-skel-line"></div>
+        </div>
+
+        <!-- AI Result -->
+        <div class="ai-body" id="aiResultBody">
+            <div style="text-align: center; padding: 2rem 0; color: #64748b;">
+                <i class="fas fa-brain fa-3x mb-3" style="opacity: 0.15;"></i>
+                <p class="mb-1">Nhấn <strong>"Phân tích AI"</strong> để AI phân tích dữ liệu kinh doanh</p>
+                <p class="mb-0 small">AI sẽ đánh giá doanh thu, xu hướng đăng ký và đưa ra đề xuất</p>
+            </div>
+        </div>
+    </div>
+
 </div>
 
+<!-- ===== SCRIPTS ===== -->
 <div layout:fragment="scripts">
     <script>
-        // Toggle custom date inputs based on selected period
-        function toggleReportCustomDateInputs() {
-            const periodSelect = document.getElementById('reportPeriodSelect');
-            const customDateInputs = document.getElementById('reportCustomDateInputs');
-            const startDate = document.getElementById('reportStartDate');
-            const endDate = document.getElementById('reportEndDate');
-            
-            if (periodSelect.value === 'custom') {
-                customDateInputs.style.display = 'flex';
-                startDate.required = true;
-                endDate.required = true;
-                
-                // Set default values if empty
-                if (!startDate.value) {
+        function selectPeriod(value) {
+            // Update hidden field
+            document.getElementById('reportPeriodSelect').value = value;
+            // Toggle active button
+            document.querySelectorAll('.rpt-period-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.value === value);
+            });
+            // Custom date toggle
+            const box = document.getElementById('reportCustomDateInputs');
+            const s = document.getElementById('reportStartDate');
+            const e = document.getElementById('reportEndDate');
+            if (value === 'custom') {
+                box.style.display = 'flex';
+                s.required = true; e.required = true;
+                if (!s.value) {
                     const today = new Date();
-                    const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
-                    startDate.value = monthAgo.toISOString().split('T')[0];
-                    endDate.value = today.toISOString().split('T')[0];
+                    const ago = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+                    s.value = ago.toISOString().split('T')[0];
+                    e.value = today.toISOString().split('T')[0];
                 }
             } else {
-                customDateInputs.style.display = 'none';
-                startDate.required = false;
-                endDate.required = false;
+                box.style.display = 'none';
+                s.required = false; e.required = false;
             }
         }
-        
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            toggleReportCustomDateInputs();
-        });
     </script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script th:inline="javascript">
-        // Wait for Chart.js and DOM to load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Quarterly Comparison Bar Charts for Reports
-            const reportQuarterlyData = /*[[${stats?.quarterlyComparisons}]]*/ [];
-            
-            if (reportQuarterlyData && reportQuarterlyData.length > 0) {
-                // Extract data for charts
-                const quarterLabels = reportQuarterlyData.map(q => q.quarter);
-                const quarterRevenues = reportQuarterlyData.map(q => q.revenue);
-                const quarterOrders = reportQuarterlyData.map(q => q.orders);
-                
-                // Revenue Bar Chart
-                if (document.getElementById('reportQuarterlyRevenueChart')) {
-                    const revenueCtx = document.getElementById('reportQuarterlyRevenueChart');
-                    new Chart(revenueCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: quarterLabels,
-                        datasets: [{
+    document.addEventListener('DOMContentLoaded', function() {
+
+        /* ---- Shared defaults ---- */
+        Chart.defaults.font.family = "'Segoe UI', 'Inter', sans-serif";
+        Chart.defaults.color = '#94a3b8';
+        const _tooltip = {
+            backgroundColor: 'rgba(15,23,42,0.95)',
+            titleColor: '#e2e8f0',
+            bodyColor: '#cbd5e1',
+            borderColor: 'rgba(255,255,255,0.08)',
+            borderWidth: 1,
+            cornerRadius: 10,
+            padding: 14,
+            displayColors: true,
+            boxPadding: 6
+        };
+        const _gridLine = { color: 'rgba(255,255,255,0.04)', drawBorder: false };
+        const _tick = { color: '#64748b', font: { size: 11 } };
+
+        /* ==========================
+           REVENUE + ORDERS LINE CHART
+           ========================== */
+        const labels        = /*[[${stats?.labels}]]*/ [];
+        const revenueData   = /*[[${stats?.revenueSeries}]]*/ [];
+        const ordersData    = /*[[${stats?.paidOrdersSeries}]]*/ [];
+        const enrollData    = /*[[${stats?.enrollmentSeries}]]*/ [];
+
+        const revCanvas = document.getElementById('rptRevenueChart');
+        if (revCanvas && labels && labels.length > 0) {
+            const ctx = revCanvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 360);
+            grad.addColorStop(0, 'rgba(99,102,241,0.30)');
+            grad.addColorStop(0.6, 'rgba(99,102,241,0.05)');
+            grad.addColorStop(1, 'rgba(99,102,241,0)');
+
+            new Chart(revCanvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
                             label: 'Doanh thu (đ)',
-                            data: quarterRevenues,
-                            backgroundColor: [
-                                'rgba(108, 92, 231, 0.8)',
-                                'rgba(16, 185, 129, 0.8)',
-                                'rgba(245, 158, 11, 0.8)',
-                                'rgba(239, 68, 68, 0.8)'
-                            ],
-                            borderColor: [
-                                'rgba(108, 92, 231, 1)',
-                                'rgba(16, 185, 129, 1)',
-                                'rgba(245, 158, 11, 1)',
-                                'rgba(239, 68, 68, 1)'
-                            ],
-                            borderWidth: 2,
-                            borderRadius: 5
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: true,
-                                labels: { color: '#666666' }
-                            },
-                            title: {
-                                display: true,
-                                text: 'So sánh doanh thu theo quý',
-                                color: '#333333',
-                                font: { size: 14, weight: 'bold' }
-                            }
+                            data: revenueData,
+                            borderColor: '#818cf8',
+                            backgroundColor: grad,
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: '#818cf8',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2,
+                            yAxisID: 'y'
                         },
-                        scales: {
-                            x: {
-                                ticks: { color: '#666666' },
-                                grid: { color: 'rgba(0,0,0,0.05)' }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                ticks: { 
-                                    color: '#666666',
-                                    callback: function(value) {
-                                        return value.toLocaleString('vi-VN') + ' đ';
-                                    }
-                                },
-                                grid: { color: 'rgba(0,0,0,0.05)' }
-                            }
-                        }
-                    }
-                });
-            }
-            
-            // Orders Bar Chart
-            if (document.getElementById('reportQuarterlyOrdersChart')) {
-                const ordersCtx = document.getElementById('reportQuarterlyOrdersChart');
-                new Chart(ordersCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: quarterLabels,
-                        datasets: [{
-                            label: 'Số đơn hàng',
-                            data: quarterOrders,
-                            backgroundColor: [
-                                'rgba(16, 185, 129, 0.8)',
-                                'rgba(108, 92, 231, 0.8)',
-                                'rgba(245, 158, 11, 0.8)',
-                                'rgba(239, 68, 68, 0.8)'
-                            ],
-                            borderColor: [
-                                'rgba(16, 185, 129, 1)',
-                                'rgba(108, 92, 231, 1)',
-                                'rgba(245, 158, 11, 1)',
-                                'rgba(239, 68, 68, 1)'
-                            ],
+                        {
+                            label: 'Đơn thanh toán',
+                            data: ordersData,
+                            borderColor: '#34d399',
+                            backgroundColor: 'transparent',
+                            tension: 0.4,
+                            fill: false,
                             borderWidth: 2,
-                            borderRadius: 5
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: true,
-                                labels: { color: '#666666' }
-                            },
-                            title: {
-                                display: true,
-                                text: 'So sánh số đơn hàng theo quý',
-                                color: '#333333',
-                                font: { size: 14, weight: 'bold' }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                ticks: { color: '#666666' },
-                                grid: { color: 'rgba(0,0,0,0.05)' }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                ticks: { 
-                                    color: '#666666',
-                                    stepSize: 1
-                                },
-                                grid: { color: 'rgba(0,0,0,0.05)' }
-                            }
+                            borderDash: [6, 3],
+                            pointRadius: 0,
+                            pointHoverRadius: 5,
+                            pointHoverBackgroundColor: '#34d399',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2,
+                            yAxisID: 'y1'
                         }
-                    }
-                });
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', usePointStyle: true, pointStyle: 'circle', padding: 20, font: { size: 12 } } },
+                        tooltip: Object.assign({}, _tooltip, {
+                            callbacks: {
+                                label: function(ctx) {
+                                    if (ctx.datasetIndex === 0) return '  Doanh thu: ' + Number(ctx.raw).toLocaleString('vi-VN') + ' đ';
+                                    return '  Đơn hàng: ' + ctx.raw;
+                                }
+                            }
+                        })
+                    },
+                    scales: {
+                        x:  { ticks: Object.assign({}, _tick, { maxRotation: 45 }), grid: _gridLine },
+                        y:  { type:'linear', position:'left',  ticks: Object.assign({}, _tick, { callback: v => v.toLocaleString('vi-VN') + ' đ' }), grid: _gridLine },
+                        y1: { type:'linear', position:'right', grid: { drawOnChartArea: false, drawBorder: false }, ticks: Object.assign({}, _tick, { stepSize: 1 }) }
+                    },
+                    animation: { duration: 1200, easing: 'easeOutQuart' }
                 }
+            });
+        }
+
+        /* ==========================
+           ENROLLMENT BAR CHART
+           ========================== */
+        const enrollCanvas = document.getElementById('rptEnrollChart');
+        if (enrollCanvas && enrollData && enrollData.length > 0) {
+            const ectx = enrollCanvas.getContext('2d');
+            const eGrad = ectx.createLinearGradient(0, 0, 0, 280);
+            eGrad.addColorStop(0, 'rgba(59,130,246,0.6)');
+            eGrad.addColorStop(1, 'rgba(59,130,246,0.05)');
+
+            new Chart(enrollCanvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Đăng ký mới',
+                        data: enrollData,
+                        backgroundColor: eGrad,
+                        borderColor: 'rgba(59,130,246,0.7)',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: Object.assign({}, _tooltip, {
+                            callbacks: { label: ctx => '  Đăng ký: ' + ctx.raw }
+                        })
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { beginAtZero: true, ticks: Object.assign({}, _tick, { stepSize: 1 }), grid: _gridLine }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart',
+                        delay: ctx => ctx.dataIndex * 40
+                    }
+                }
+            });
+        }
+
+        /* ==========================
+           TOPIC DOUGHNUT CHART
+           ========================== */
+        const topicData = /*[[${stats?.topicDistributions}]]*/ [];
+        const topicCanvas = document.getElementById('rptTopicChart');
+        if (topicCanvas && topicData && topicData.length > 0) {
+            const colors = ['#818cf8','#34d399','#fbbf24','#fb7185','#60a5fa','#a78bfa','#f472b6','#2dd4bf','#f97316','#22d3ee'];
+            new Chart(topicCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: topicData.map(t => t.topicName),
+                    datasets: [{
+                        data: topicData.map(t => t.courseCount),
+                        backgroundColor: colors.slice(0, topicData.length),
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position:'bottom', labels: { color:'#94a3b8', padding:10, font:{size:11}, usePointStyle:true, pointStyle:'circle' } },
+                        tooltip: _tooltip
+                    },
+                    animation: { animateRotate: true, duration: 1200, easing: 'easeOutQuart' }
+                }
+            });
+        }
+
+        /* ==========================
+           QUARTERLY CHARTS
+           ========================== */
+        const qData = /*[[${stats?.quarterlyComparisons}]]*/ [];
+        if (qData && qData.length > 0) {
+            const qLabels  = qData.map(q => q.quarter);
+            const qRevs    = qData.map(q => q.revenue);
+            const qOrds    = qData.map(q => q.orders);
+            const qColors  = ['rgba(129,140,248,0.7)','rgba(52,211,153,0.7)','rgba(251,191,36,0.7)','rgba(251,113,133,0.7)'];
+            const qBorders = ['#818cf8','#34d399','#fbbf24','#fb7185'];
+
+            const qr = document.getElementById('rptQRevenueChart');
+            if (qr) {
+                new Chart(qr, {
+                    type: 'bar',
+                    data: { labels: qLabels, datasets: [{ label:'Doanh thu', data: qRevs, backgroundColor: qColors, borderColor: qBorders, borderWidth: 2, borderRadius: 8, borderSkipped: false }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: Object.assign({}, _tooltip, { callbacks: { label: ctx => '  ' + Number(ctx.raw).toLocaleString('vi-VN') + ' đ' } }) },
+                        scales: {
+                            x: { ticks: { color:'#64748b', font:{size:12} }, grid: _gridLine },
+                            y: { beginAtZero:true, ticks: Object.assign({}, _tick, { callback: v => v.toLocaleString('vi-VN') + ' đ' }), grid: _gridLine }
+                        },
+                        animation: { duration: 1000, easing: 'easeOutQuart' }
+                    }
+                });
             }
-        });
+
+            const qo = document.getElementById('rptQOrdersChart');
+            if (qo) {
+                new Chart(qo, {
+                    type: 'bar',
+                    data: { labels: qLabels, datasets: [{ label:'Đơn hàng', data: qOrds, backgroundColor: qColors.slice().reverse(), borderColor: qBorders.slice().reverse(), borderWidth: 2, borderRadius: 8, borderSkipped: false }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: _tooltip },
+                        scales: {
+                            x: { ticks: { color:'#64748b', font:{size:12} }, grid: _gridLine },
+                            y: { beginAtZero:true, ticks: Object.assign({}, _tick, { stepSize: 1 }), grid: _gridLine }
+                        },
+                        animation: { duration: 1000, easing: 'easeOutQuart' }
+                    }
+                });
+            }
+        }
+
+    });
+
+    // ===== AI Analysis AJAX =====
+    function loadAiAnalysis() {
+        const btn = document.getElementById('btnAiAnalyze');
+        const skeleton = document.getElementById('aiSkeleton');
+        const resultBody = document.getElementById('aiResultBody');
+
+        // Disable button & show loading
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang phân tích...';
+        skeleton.classList.add('active');
+        resultBody.style.display = 'none';
+
+        // Build query params matching current filter
+        const period = /*[[${period}]]*/ 'month';
+        const startDate = /*[[${startDate}]]*/ '';
+        const endDate = /*[[${endDate}]]*/ '';
+
+        let url = '/admin/api/ai-analysis?period=' + encodeURIComponent(period);
+        if (startDate) url += '&startDate=' + encodeURIComponent(startDate);
+        if (endDate) url += '&endDate=' + encodeURIComponent(endDate);
+
+        fetch(url, { credentials: 'same-origin' })
+            .then(response => {
+                if (!response.ok) throw new Error('Network error');
+                return response.text();
+            })
+            .then(html => {
+                skeleton.classList.remove('active');
+                resultBody.innerHTML = html;
+                resultBody.style.display = 'block';
+                resultBody.style.opacity = '0';
+                resultBody.style.transform = 'translateY(10px)';
+                // Smooth fade-in
+                requestAnimationFrame(() => {
+                    resultBody.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    resultBody.style.opacity = '1';
+                    resultBody.style.transform = 'translateY(0)';
+                });
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Phân tích lại';
+                btn.disabled = false;
+            })
+            .catch(err => {
+                skeleton.classList.remove('active');
+                resultBody.innerHTML = '<div class="ai-insight-item"><span class="ai-emoji">⚠️</span>' +
+                    '<span><strong>Lỗi:</strong> Không thể kết nối AI. Vui lòng thử lại sau. (' + err.message + ')</span></div>';
+                resultBody.style.display = 'block';
+                btn.innerHTML = '<i class="fas fa-redo"></i> Thử lại';
+                btn.disabled = false;
+            });
+    }
     </script>
 </div>
 </body>

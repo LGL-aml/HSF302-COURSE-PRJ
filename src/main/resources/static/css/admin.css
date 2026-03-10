@@ -570,6 +570,33 @@ body {
     max-height: 300px;
 }
 
+/*
+ * Chart wrapper — The fix for Chart.js infinite canvas stretch.
+ * DO NOT use position:absolute on canvas — it conflicts with Chart.js 4.x.
+ * Instead: set a fixed height on the wrapper + overflow:hidden.
+ * Chart.js reads the container height when maintainAspectRatio:false.
+ */
+.chart-wrapper,
+.rpt-chart-box {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+.chart-wrapper canvas,
+.rpt-chart-box canvas {
+    display: block;
+    width: 100% !important;
+}
+
+/* Fixed height classes for chart containers */
+.chart-wrapper-revenue { height: 340px; }
+.chart-wrapper-enrollment { height: 260px; }
+.chart-wrapper-topic { height: 220px; }
+.chart-wrapper-quarterly { height: 280px; }
+.rpt-chart-lg { height: 360px; }
+.rpt-chart-md { height: 280px; }
+.rpt-chart-sm { height: 220px; }
+
 /* ========== USER MANAGEMENT ========== */
 .user-item {
     display: flex;
