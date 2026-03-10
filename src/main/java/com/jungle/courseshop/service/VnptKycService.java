@@ -15,6 +15,9 @@ public interface VnptKycService {
 
     VnptFaceCompareResponse compareFace(MultipartFile portraitImage, String frontCardHash);
 
+    // New: compare face from base64 string captured via webcam
+    VnptFaceCompareResponse compareFaceFromBase64(String portraitBase64, String frontCardHash);
+
     // Upload file to VNPT and return hash
     String uploadFileToVnpt(MultipartFile file);
 }

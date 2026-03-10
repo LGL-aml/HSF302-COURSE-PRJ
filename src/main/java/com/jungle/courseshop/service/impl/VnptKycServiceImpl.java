@@ -13,6 +13,7 @@ import com.jungle.courseshop.service.VnptKycService;
 import com.jungle.courseshop.utils.DateUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -324,6 +325,102 @@ public class VnptKycServiceImpl implements VnptKycService {
         } catch (WebClientResponseException e) {
             log.error("LỖI API VNPT (Face Compare): {}", e.getResponseBodyAsString());
             throw new IllegalArgumentException("Lỗi xác thực khuôn mặt: " + e.getResponseBodyAsString());
+        }
+    }
+
+    @Override
+    public VnptFaceCompareResponse compareFaceFromBase64(String portraitBase64, String frontCardHash) {
+        if (portraitBase64 == null || portraitBase64.isBlank()) {
+            throw new IllegalArgumentException("Ảnh chân dung không được để trống.");
+        }
+
+        // Strip data URI prefix if present (e.g. "data:image/jpeg;base64,")
+        String base64Data = portraitBase64;
+        if (portraitBase64.contains(",")) {
+            base64Data = portraitBase64.substring(portraitBase64.indexOf(',') + 1);
+        }
+
+        byte[] imageBytes;
+        try {
+            imageBytes = java.util.Base64.getDecoder().decode(base64Data);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Dữ liệu ảnh base64 không hợp lệ.");
+        }
+
+        // Upload raw bytes to VNPT to get portrait hash
+        log.info("Đang upload ảnh chân dung (base64) lên VNPT...");
+        String portraitHash = uploadFileBytes(imageBytes, "portrait.jpg");
+
+        String safeClientSession = ("user_" + System.currentTimeMillis()).replaceAll("[^a-zA-Z0-9]", "");
+        String transactionToken = UUID.randomUUID().toString().replace("-", "");
+
+        VnptFaceCompareRequest requestBody = VnptFaceCompareRequest.builder()
+                .img_front(frontCardHash)
+                .img_face(portraitHash)
+                .client_session(safeClientSession)
+                .token(transactionToken)
+                .build();
+
+        log.info("Đang gọi API xác thực khuôn mặt (/ai/v1/face/compare)...");
+        try {
+            VnptFaceCompareResponse response = vnptWebClient.post()
+                    .uri("/ai/v1/face/compare")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("mac-address", "TEST1")
+                    .body(BodyInserters.fromValue(requestBody))
+                    .retrieve()
+                    .bodyToMono(VnptFaceCompareResponse.class)
+                    .block();
+
+            if (response == null || response.getObject() == null) {
+                throw new IllegalArgumentException("Không thể so khớp khuôn mặt (Response rỗng)");
+            }
+
+            log.info("Kết quả so khớp: {} - Độ tin cậy: {}%",
+                    response.getObject().getMsg(),
+                    response.getObject().getProb());
+
+            return response;
+        } catch (WebClientResponseException e) {
+            log.error("LỖI API VNPT (Face Compare base64): {}", e.getResponseBodyAsString());
+            throw new IllegalArgumentException("Lỗi xác thực khuôn mặt: " + e.getResponseBodyAsString());
+        }
+    }
+
+    /**
+     * Upload raw image bytes to VNPT file-service and return the hash.
+     */
+    private String uploadFileBytes(byte[] imageBytes, String filename) {
+        ByteArrayResource resource = new ByteArrayResource(imageBytes) {
+            @Override
+            public String getFilename() {
+                return filename;
+            }
+        };
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", resource);
+        body.add("title", "Portrait Upload");
+        body.add("description", "Webcam selfie for face verification");
+
+        try {
+            VnptUploadResponse response = vnptWebClient.post()
+                    .uri("/file-service/v1/addFile")
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .body(BodyInserters.fromMultipartData(body))
+                    .retrieve()
+                    .bodyToMono(VnptUploadResponse.class)
+                    .block();
+
+            if (response != null && response.getObject() != null && response.getObject().getHash() != null) {
+                return response.getObject().getHash();
+            } else {
+                throw new IllegalArgumentException("Upload ảnh chân dung thất bại (response không có hash).");
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Lỗi khi upload ảnh chân dung: " + e.getMessage(), e);
         }
     }
 

@@ -78,7 +78,7 @@ public class VnptKycController {
 
     // Bước 4: Xử lý xác thực khuôn mặt → so khớp → bóc tách OCR → hiển thị review
     @PostMapping("/verify-face")
-    public String verifyFaceAndExtract(@RequestParam("portraitImage") MultipartFile portraitImage,
+    public String verifyFaceAndExtract(@RequestParam("portraitImageBase64") String portraitImageBase64,
                                        HttpSession session,
                                        Model model,
                                        RedirectAttributes redirectAttributes) {
@@ -91,10 +91,15 @@ public class VnptKycController {
                 return "redirect:/lecturer/kyc/upload";
             }
 
-            log.info("=== Bước 2: Xác thực khuôn mặt ===");
+            if (portraitImageBase64 == null || portraitImageBase64.isBlank()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Vui lòng chụp ảnh khuôn mặt trước khi xác thực.");
+                return "redirect:/lecturer/kyc/face-verify";
+            }
 
-            // 1. So khớp khuôn mặt với ảnh CCCD
-            VnptFaceCompareResponse faceResult = vnptKycService.compareFace(portraitImage, frontHash);
+            log.info("=== Bước 2: Xác thực khuôn mặt (webcam base64) ===");
+
+            // 1. So khớp khuôn mặt với ảnh CCCD từ dữ liệu base64 do webcam chụp
+            VnptFaceCompareResponse faceResult = vnptKycService.compareFaceFromBase64(portraitImageBase64, frontHash);
 
             // 2. Kiểm tra kết quả so khớp (ngưỡng tin cậy >= 80%)
             Double probability = faceResult.getObject().getProb();
