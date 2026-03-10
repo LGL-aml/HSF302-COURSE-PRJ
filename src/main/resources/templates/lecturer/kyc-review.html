@@ -282,13 +282,11 @@
                 <span class="step-text">Xác thực khuôn mặt</span>
             </div>
             <div class="step-line completed"></div>
-            <div class="step">
+            <div class="step active">
                 <div class="step-number">3</div>
                 <span class="step-text">Hoàn tất</span>
             </div>
         </div>
-
-                <div class="step-number">4</div>
         <div class="warning-box">
             <div class="d-flex align-items-start">
                 <i class="fas fa-exclamation-triangle me-2 mt-1" style="color: #f59e0b;"></i>
@@ -303,15 +301,18 @@
                     <i class="fas fa-id-card"></i>
                     Thông tin từ CCCD
                     <span class="verified-badge ms-auto">
-                        <i class="fas fa-check-circle"></i> Đã xác thực
+                        <i class="fas fa-check-circle"></i> Đã xác thực eKYC
+                        <span th:if="${faceMatchProbability}">
+                            &nbsp;| Độ khớp: <span th:text="${faceMatchProbability}"></span>%
+                        </span>
                     </span>
                 </h5>
 
                 <div class="row">
-                        <i class="fas fa-check-circle"></i> Đã xác thực eKYC
-                        <span th:if="${faceMatchProbability}">
-                            &nbsp;| Độ khớp khuôn mặt: <span th:text="${faceMatchProbability}"></span>%
-                        </span>
+                    <div class="col-md-6">
+                        <div class="info-row">
+                            <span class="info-label">Số CCCD:</span>
+                            <span class="info-value" th:text="*{identifyNumber}">001234567890</span>
                             <input type="hidden" th:field="*{identifyNumber}">
                         </div>
                         <div class="info-row">

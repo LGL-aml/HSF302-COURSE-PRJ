@@ -4,6 +4,219 @@
       layout:decorate="~{admin/layout}">
 <head>
     <title th:text="${title}">Admin Dashboard</title>
+    <style>
+        /* ===== Dashboard Specific Styles ===== */
+        .stat-mini { font-size: 0.8rem; opacity: 0.85; margin-top: 4px; }
+
+        /* Chart containers with fixed heights to prevent stretching */
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .chart-wrapper-revenue {
+            height: 340px;
+        }
+        .chart-wrapper-enrollment {
+            height: 260px;
+        }
+        .chart-wrapper-topic {
+            height: 220px;
+        }
+        .chart-wrapper-quarterly {
+            height: 280px;
+        }
+
+        /* Glassmorphism stat cards */
+        .glass-stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+        .glass-stat-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        .glass-stat-card.accent-purple::before { background: linear-gradient(90deg, #667eea, #764ba2); }
+        .glass-stat-card.accent-green::before { background: linear-gradient(90deg, #11998e, #38ef7d); }
+        .glass-stat-card.accent-blue::before { background: linear-gradient(90deg, #2193b0, #6dd5ed); }
+        .glass-stat-card.accent-amber::before { background: linear-gradient(90deg, #f7971e, #ffd200); }
+        .glass-stat-card.accent-rose::before { background: linear-gradient(90deg, #ee5a6f, #f29263); }
+        .glass-stat-card.accent-teal::before { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+
+        .stat-icon-wrap {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        .stat-icon-wrap.bg-purple { background: rgba(102, 126, 234, 0.18); color: #818cf8; }
+        .stat-icon-wrap.bg-green { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+        .stat-icon-wrap.bg-blue { background: rgba(59, 130, 246, 0.18); color: #60a5fa; }
+        .stat-icon-wrap.bg-amber { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+        .stat-icon-wrap.bg-rose { background: rgba(244, 63, 94, 0.18); color: #fb7185; }
+        .stat-icon-wrap.bg-teal { background: rgba(13, 148, 136, 0.18); color: #2dd4bf; }
+
+        .stat-value {
+            font-size: 1.85rem;
+            font-weight: 800;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .stat-link {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .stat-link:hover { color: #e2e8f0; }
+
+        /* Section titles */
+        .section-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title i {
+            color: #818cf8;
+        }
+
+        /* Chart Card */
+        .chart-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .chart-card:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Best seller rank badges */
+        .best-seller-rank {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        .rank-1 { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; box-shadow: 0 2px 8px rgba(245,158,11,0.3); }
+        .rank-2 { background: linear-gradient(135deg, #94a3b8, #64748b); color: #fff; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #a0522d); color: #fff; }
+        .rank-other { background: #334155; color: #94a3b8; }
+
+        /* Quarter tabs */
+        .quarter-tab {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+        .quarter-tab:hover, .quarter-tab.active {
+            background: rgba(79,70,229,0.3);
+            border-color: #6366f1;
+            color: #a5b4fc;
+        }
+
+        /* Topic progress bars */
+        .topic-progress {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+        .topic-progress-bar {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Animated counter */
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-count {
+            animation: countUp 0.6s ease-out forwards;
+        }
+
+        /* Pulse dot for live indicator */
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #34d399;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+        }
+
+        /* Divider */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+            margin: 0.5rem 0;
+        }
+
+        /* Revenue highlight card */
+        .revenue-highlight {
+            background: linear-gradient(135deg, rgba(102,126,234,0.12) 0%, rgba(118,75,162,0.12) 100%);
+            border: 1px solid rgba(102,126,234,0.15);
+            border-radius: 14px;
+            padding: 1.2rem 1.5rem;
+        }
+
+        /* Filter bar */
+        .filter-bar {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+        }
+    </style>
 </head>
 <body>
     <div layout:fragment="content">
@@ -13,92 +226,143 @@
                 <h2 class="page-title">
                     <i class="fas fa-chart-line"></i> Dashboard
                 </h2>
-                <p class="text-muted mb-0" th:text="${#temporals.format(#temporals.createNow(), 'EEEE, dd MMMM yyyy')}">Date</p>
+                <p class="text-muted mb-0 d-flex align-items-center gap-2">
+                    <span class="pulse-dot"></span>
+                    <span th:text="${#temporals.format(#temporals.createNow(), 'EEEE, dd MMMM yyyy')}">Date</span>
+                </p>
             </div>
             <a th:href="@{/admin/users}" class="btn btn-admin btn-admin-primary">
                 <i class="fas fa-users me-2"></i>Quản lý người dùng
             </a>
         </div>
 
-        <!-- Stats Cards -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-4">
-                <div class="admin-card bg-gradient-primary text-white h-100">
-                    <div class="d-flex justify-content-between align-items-center position-relative z-1">
-                        <div>
-                            <p class="text-uppercase mb-2 opacity-75 small">Người dùng</p>
-                            <h2 class="display-6 fw-bold mb-0" th:text="${totalUsers} ?: 0">0</h2>
+        <!-- Stats Cards Row 1: Core Metrics -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="glass-stat-card accent-purple h-100 animate-count">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="stat-icon-wrap bg-purple">
+                            <i class="fas fa-users"></i>
                         </div>
-                        <div class="p-3 bg-white bg-opacity-25 rounded-circle">
-                            <i class="fas fa-users fa-2x"></i>
+                        <div>
+                            <div class="stat-label">Người dùng</div>
+                            <div class="stat-value" th:text="${totalUsers} ?: 0">0</div>
                         </div>
                     </div>
-                    <i class="fas fa-users card-icon-bg"></i>
-                    <a th:href="@{/admin/users}" class="text-white text-decoration-none d-block mt-3">
-                        <small>Xem chi tiết <i class="fas fa-arrow-right ms-1"></i></small>
+                    <a th:href="@{/admin/users}" class="stat-link">
+                        Xem chi tiết <i class="fas fa-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
-            
-            <div class="col-md-4">
-                <div class="admin-card bg-gradient-success text-white h-100">
-                    <div class="d-flex justify-content-between align-items-center position-relative z-1">
-                        <div>
-                            <p class="text-uppercase mb-2 opacity-75 small">Khóa học</p>
-                            <h2 class="display-6 fw-bold mb-0" th:text="${totalCourses} ?: 0">0</h2>
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="glass-stat-card accent-green h-100 animate-count" style="animation-delay: 0.1s;">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="stat-icon-wrap bg-green">
+                            <i class="fas fa-book"></i>
                         </div>
-                        <div class="p-3 bg-white bg-opacity-25 rounded-circle">
-                            <i class="fas fa-book fa-2x"></i>
+                        <div>
+                            <div class="stat-label">Khóa học</div>
+                            <div class="stat-value" th:text="${totalCourses} ?: 0">0</div>
                         </div>
                     </div>
-                    <i class="fas fa-book card-icon-bg"></i>
-                    <a th:href="@{/admin/courses}" class="text-white text-decoration-none d-block mt-3">
-                        <small>Xem tất cả <i class="fas fa-arrow-right ms-1"></i></small>
+                    <a th:href="@{/admin/courses}" class="stat-link">
+                        Xem tất cả <i class="fas fa-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
-
-            <div class="col-md-4">
-                <div class="admin-card bg-gradient-info text-white h-100">
-                    <div class="d-flex justify-content-between align-items-center position-relative z-1">
-                        <div>
-                            <p class="text-uppercase mb-2 opacity-75 small">Chủ đề</p>
-                            <h2 class="display-6 fw-bold mb-0" th:text="${totalTopics} ?: 0">0</h2>
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="glass-stat-card accent-blue h-100 animate-count" style="animation-delay: 0.2s;">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="stat-icon-wrap bg-blue">
+                            <i class="fas fa-chalkboard-teacher"></i>
                         </div>
-                        <div class="p-3 bg-white bg-opacity-25 rounded-circle">
-                            <i class="fas fa-tags fa-2x"></i>
+                        <div>
+                            <div class="stat-label">Giảng viên</div>
+                            <div class="stat-value" th:text="${totalLecturers} ?: 0">0</div>
                         </div>
                     </div>
-                    <i class="fas fa-tags card-icon-bg"></i>
-                    <a th:href="@{/admin/topics}" class="text-white text-decoration-none d-block mt-3">
-                        <small>Quản lý ngay <i class="fas fa-arrow-right ms-1"></i></small>
-                    </a>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="glass-stat-card accent-amber h-100 animate-count" style="animation-delay: 0.3s;">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="stat-icon-wrap bg-amber">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label">Tổng đăng ký</div>
+                            <div class="stat-value" th:text="${totalEnrollments} ?: 0">0</div>
+                        </div>
+                    </div>
+                    <p class="stat-mini mb-0" th:if="${stats?.newEnrollmentsThisPeriod > 0}">
+                        <i class="fas fa-arrow-up text-success"></i> +<span th:text="${stats.newEnrollmentsThisPeriod}">0</span> mới
+                    </p>
                 </div>
             </div>
         </div>
 
-        <!-- Charts + Export -->
-        <div class="admin-card mb-4">
-            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-4">
-                <h5 class="fw-bold mb-0"><i class="fas fa-chart-area me-2"></i>Thống kê doanh thu</h5>
+        <!-- Stats Cards Row 2: Revenue Summary -->
+        <div class="row g-3 mb-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="revenue-highlight h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrap bg-green">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label mb-1">Tổng doanh thu</div>
+                            <h4 class="fw-bold text-success mb-0" th:text="${#numbers.formatDecimal(stats?.totalRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="revenue-highlight h-100" style="background: linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(99,102,241,0.12) 100%); border-color: rgba(59,130,246,0.15);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrap bg-blue">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label mb-1">Đơn đã thanh toán</div>
+                            <h4 class="fw-bold mb-0" style="color: #60a5fa;" th:text="${totalPaidOrders} ?: 0">0</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="revenue-highlight h-100" style="background: linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(234,179,8,0.12) 100%); border-color: rgba(245,158,11,0.15);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrap bg-amber">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div>
+                            <div class="stat-label mb-1">TB mỗi đơn hàng</div>
+                            <h4 class="fw-bold mb-0" style="color: #fbbf24;" th:text="${#numbers.formatDecimal(stats?.avgRevenuePerOrder ?: 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar mb-4">
+            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between">
+                <h5 class="section-title mb-0"><i class="fas fa-chart-area"></i> Thống kê doanh thu &amp; đăng ký</h5>
                 <div class="d-flex flex-wrap gap-2 align-items-center">
                     <form method="get" th:action="@{/admin/dashboard}" class="d-flex flex-wrap gap-2 align-items-center" id="statsFilterForm">
                         <select class="form-select-admin" name="period" id="periodSelect" style="min-width: 180px;" onchange="toggleCustomDateInputs()">
                             <option value="month" th:selected="${period == 'month'}">30 ngày gần nhất</option>
                             <option value="year" th:selected="${period == 'year'}">12 tháng gần nhất</option>
                             <option value="quarter" th:selected="${period == 'quarter'}">So sánh theo quý</option>
-                            <option value="custom" th:selected="${period == 'custom'}">Tùy chỉnh khoảng thời gian</option>
+                            <option value="custom" th:selected="${period == 'custom'}">Tùy chỉnh</option>
                         </select>
-                        
-                        <!-- Custom date range inputs -->
                         <div id="customDateInputs" style="display: none;" class="d-flex gap-2">
-                            <input type="date" name="startDate" id="startDate" class="form-control form-control-sm" 
+                            <input type="date" name="startDate" id="startDate" class="form-control form-control-sm"
                                    th:value="${startDate}" style="max-width: 150px;">
-                            <span class="align-self-center">đến</span>
-                            <input type="date" name="endDate" id="endDate" class="form-control form-control-sm" 
+                            <span class="align-self-center text-muted">đến</span>
+                            <input type="date" name="endDate" id="endDate" class="form-control form-control-sm"
                                    th:value="${endDate}" style="max-width: 150px;">
                         </div>
-                        
                         <button class="btn btn-admin btn-admin-primary" type="submit">
                             <i class="fas fa-filter me-1"></i>Lọc
                         </button>
@@ -111,161 +375,221 @@
                     </a>
                 </div>
             </div>
+        </div>
 
-            <!-- Quarterly Comparison Table (shown when period is quarter) -->
-            <div th:if="${period == 'quarter' and stats?.quarterlyComparisons != null and !stats.quarterlyComparisons.empty}" class="mb-4">
-                <div class="alert alert-info">
-                    <i class="fas fa-chart-bar me-2"></i><strong>So sánh theo quý</strong> - Hiển thị dữ liệu 4 quý gần nhất
+        <!-- Charts Section -->
+        <div class="row g-4 mb-4">
+            <!-- Revenue + Orders Chart -->
+            <div class="col-lg-8">
+                <div class="chart-card h-100">
+                    <h6 class="section-title mb-3"><i class="fas fa-chart-line"></i> Doanh thu &amp; Đơn hàng</h6>
+                    <div th:if="${stats == null or stats.labels == null or stats.labels.empty}" class="text-center py-5">
+                        <i class="fas fa-chart-line fa-3x mb-3 opacity-50"></i>
+                        <h5>Không có dữ liệu biểu đồ</h5>
+                        <p class="text-muted mb-0">Chưa có dữ liệu trong khoảng thời gian đã chọn.</p>
+                    </div>
+                    <div th:if="${stats != null and stats.labels != null and !stats.labels.empty}" class="chart-wrapper chart-wrapper-revenue">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
                 </div>
-                <div class="table-responsive">
+            </div>
+            <!-- Enrollment Trend -->
+            <div class="col-lg-4">
+                <div class="chart-card h-100">
+                    <h6 class="section-title mb-3"><i class="fas fa-user-plus"></i> Xu hướng đăng ký</h6>
+                    <div th:if="${stats == null or stats.labels == null or stats.labels.empty}" class="text-center py-5">
+                        <i class="fas fa-user-plus fa-3x mb-3 opacity-50"></i>
+                        <p class="text-muted mb-0">Chưa có dữ liệu.</p>
+                    </div>
+                    <div th:if="${stats != null and stats.labels != null and !stats.labels.empty}" class="chart-wrapper chart-wrapper-enrollment">
+                        <canvas id="enrollmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quarterly Section -->
+        <div th:if="${period == 'quarter'}" class="chart-card mb-4">
+            <h5 class="section-title mb-3"><i class="fas fa-chart-bar"></i> So sánh theo quý</h5>
+
+            <div th:if="${stats?.quarterlyComparisons != null and !stats.quarterlyComparisons.empty}">
+                <!-- Quarter Comparison Table -->
+                <div class="table-responsive mb-4">
                     <table class="table admin-table">
                         <thead>
                             <tr>
                                 <th>Quý</th>
                                 <th>Doanh thu</th>
                                 <th>Số đơn hàng</th>
-                                <th>Chênh lệch với quý trước</th>
+                                <th>So với quý trước</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:each="q, iterStat : ${stats.quarterlyComparisons}">
-                                <td>
-                                    <strong th:text="${q.quarter}">Q1 2026</strong>
-                                </td>
+                                <td><strong th:text="${q.quarter}">Q1 2026</strong></td>
                                 <td>
                                     <span class="text-success fw-bold" th:text="${#numbers.formatDecimal(q.revenue, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
                                 </td>
-                                <td>
-                                    <span class="badge-admin badge-admin-info" th:text="${q.orders}">0</span>
-                                </td>
+                                <td><span class="badge-admin badge-admin-info" th:text="${q.orders}">0</span></td>
+                                <td th:if="${iterStat.index == 0}"><span class="text-muted">-</span></td>
                                 <td th:if="${iterStat.index > 0}">
                                     <th:block th:with="prevRevenue=${stats.quarterlyComparisons[iterStat.index - 1].revenue}">
-                                        <th:block th:if="${q.revenue.compareTo(prevRevenue) > 0}">
+                                        <th:block th:if="${prevRevenue.compareTo(T(java.math.BigDecimal).ZERO) == 0}">
+                                            <span class="text-muted"><i class="fas fa-minus"></i> N/A</span>
+                                        </th:block>
+                                        <th:block th:if="${prevRevenue.compareTo(T(java.math.BigDecimal).ZERO) != 0 and q.revenue.compareTo(prevRevenue) > 0}">
                                             <span class="text-success">
                                                 <i class="fas fa-arrow-up"></i>
                                                 <span th:text="${#numbers.formatDecimal((q.revenue.subtract(prevRevenue)).divide(prevRevenue, 4, T(java.math.RoundingMode).HALF_UP).multiply(new java.math.BigDecimal('100')), 1, 'COMMA', 2, 'POINT')} + '%'">0%</span>
                                             </span>
                                         </th:block>
-                                        <th:block th:if="${q.revenue.compareTo(prevRevenue) < 0}">
+                                        <th:block th:if="${prevRevenue.compareTo(T(java.math.BigDecimal).ZERO) != 0 and q.revenue.compareTo(prevRevenue) < 0}">
                                             <span class="text-danger">
                                                 <i class="fas fa-arrow-down"></i>
                                                 <span th:text="${#numbers.formatDecimal((prevRevenue.subtract(q.revenue)).divide(prevRevenue, 4, T(java.math.RoundingMode).HALF_UP).multiply(new java.math.BigDecimal('100')), 1, 'COMMA', 2, 'POINT')} + '%'">0%</span>
                                             </span>
                                         </th:block>
-                                        <th:block th:if="${q.revenue.compareTo(prevRevenue) == 0}">
-                                            <span class="text-muted">
-                                                <i class="fas fa-minus"></i> 0%
-                                            </span>
+                                        <th:block th:if="${prevRevenue.compareTo(T(java.math.BigDecimal).ZERO) != 0 and q.revenue.compareTo(prevRevenue) == 0}">
+                                            <span class="text-muted"><i class="fas fa-minus"></i> 0%</span>
                                         </th:block>
                                     </th:block>
                                 </td>
-                                <td th:if="${iterStat.index == 0}">
-                                    <span class="text-muted">-</span>
-                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                
-                <!-- Quarterly Bar Chart Comparison -->
-                <div class="mt-4">
-                    <h6 class="fw-bold mb-3"><i class="fas fa-chart-bar me-2"></i>Biểu đồ so sánh theo quý</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <canvas id="quarterlyRevenueChart" height="200"></canvas>
-                        </div>
-                        <div class="col-md-6">
-                            <canvas id="quarterlyOrdersChart" height="200"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- No data message for quarterly -->
-            <div th:if="${period == 'quarter' and (stats?.quarterlyComparisons == null or stats.quarterlyComparisons.empty)}" class="mb-4">
-                <div class="alert alert-warning text-center">
-                    <i class="fas fa-exclamation-circle fa-2x mb-3"></i>
-                    <h5>Không có dữ liệu theo quý</h5>
-                    <p class="mb-0">Không tìm thấy dữ liệu đơn hàng trong 4 quý gần nhất. Vui lòng thử lại sau hoặc chọn khoảng thời gian khác.</p>
-                </div>
-            </div>
 
-            <div class="row g-4">
-                <div class="col-lg-8">
-                    <!-- No data message for chart -->
-                    <div th:if="${stats == null or stats.labels == null or stats.labels.empty}" class="admin-card">
-                        <div class="alert alert-warning text-center" style="min-height: 300px; display: flex; flex-direction: column; justify-content: center;">
-                            <i class="fas fa-chart-line fa-3x mb-3 opacity-50"></i>
-                            <h5>Không có dữ liệu biểu đồ</h5>
-                            <p class="mb-0">Không tìm thấy dữ liệu trong khoảng thời gian đã chọn.<br>Vui lòng thử lại với khoảng thời gian khác.</p>
+                <!-- Quarterly Bar Charts -->
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="chart-wrapper chart-wrapper-quarterly">
+                            <canvas id="quarterlyRevenueChart"></canvas>
                         </div>
                     </div>
-                    
-                    <div th:if="${stats != null and stats.labels != null and !stats.labels.empty}" class="admin-card">
-                        <div class="chart-container">
-                            <canvas id="revenueChart" height="120"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-4">
-                    <div class="admin-card h-100">
-                        <div class="mb-4">
-                            <p class="text-muted mb-1">Tổng đơn đã thanh toán</p>
-                            <h3 class="fw-bold" th:text="${stats?.totalPaidOrders} ?: 0">0</h3>
-                            <small th:if="${stats?.totalPaidOrders == 0}" class="text-warning">
-                                <i class="fas fa-info-circle"></i> Chưa có đơn hàng nào
-                            </small>
-                        </div>
-                        <div class="mb-4">
-                            <p class="text-muted mb-1">Tổng doanh thu</p>
-                            <h3 class="fw-bold text-success" th:text="${#numbers.formatDecimal(stats?.totalRevenue ?: 0, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</h3>
-                            <small th:if="${stats?.totalRevenue == null or stats.totalRevenue.compareTo(T(java.math.BigDecimal).ZERO) == 0}" class="text-warning">
-                                <i class="fas fa-info-circle"></i> Chưa có doanh thu
-                            </small>
-                        </div>
-                        <div th:if="${period == 'custom'}">
-                            <p class="text-muted mb-1 small">Khoảng thời gian</p>
-                            <p class="fw-semibold small" th:text="${#temporals.format(stats?.startDate, 'dd/MM/yyyy')} + ' - ' + ${#temporals.format(stats?.endDate, 'dd/MM/yyyy')}">
-                                Custom range
-                            </p>
+                    <div class="col-md-6">
+                        <div class="chart-wrapper chart-wrapper-quarterly">
+                            <canvas id="quarterlyOrdersChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Top Courses -->
-            <div class="mt-4">
-                <h6 class="fw-bold mb-3"><i class="fas fa-trophy me-2 text-warning"></i>Top khóa học</h6>
-                <div class="table-responsive">
-                    <table class="table admin-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Tiêu đề</th>
-                                <th>Số đăng ký</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="c : ${stats?.topCourses}">
-                                <td th:text="${c.courseId}">1</td>
-                                <td th:text="${c.title}">Course</td>
-                                <td>
-                                    <span class="badge-admin badge-admin-success" th:text="${c.enrollments}">0</span>
-                                </td>
-                            </tr>
-                            <tr th:if="${stats == null or stats.topCourses == null or stats.topCourses.empty}">
-                                <td colspan="3" class="text-center text-muted">Chưa có dữ liệu</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div th:if="${stats?.quarterlyComparisons == null or stats.quarterlyComparisons.empty}" class="text-center py-4">
+                <i class="fas fa-exclamation-circle fa-2x mb-3 opacity-50"></i>
+                <h5>Không có dữ liệu theo quý</h5>
+            </div>
+
+            <!-- Quarterly Best Sellers -->
+            <div th:if="${stats?.quarterlyBestSellers != null and !stats.quarterlyBestSellers.empty}" class="mt-4">
+                <div class="section-divider mb-4"></div>
+                <h5 class="section-title mb-3"><i class="fas fa-fire text-danger"></i> Khóa học bán chạy nhất theo quý</h5>
+                <div class="row g-3">
+                    <div class="col-md-6 col-lg-3" th:each="qbs : ${stats.quarterlyBestSellers}">
+                        <div class="chart-card h-100" style="border-left: 3px solid #6366f1;">
+                            <h6 class="fw-bold mb-3" style="color: #818cf8;" th:text="${qbs.quarter}">Q1 2026</h6>
+                            <div th:if="${qbs.courses == null or qbs.courses.empty}" class="text-muted small">Không có dữ liệu</div>
+                            <div th:each="course, iter : ${qbs.courses}" class="d-flex align-items-center mb-2">
+                                <span class="best-seller-rank me-2"
+                                      th:classappend="${iter.index == 0} ? 'rank-1' : (${iter.index == 1} ? 'rank-2' : (${iter.index == 2} ? 'rank-3' : 'rank-other'))"
+                                      th:text="${iter.index + 1}">1</span>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="text-truncate small fw-semibold" th:text="${course.title}" th:title="${course.title}">Course</div>
+                                    <small class="text-muted" th:text="${course.soldCount} + ' bán | ' + ${#numbers.formatDecimal(course.totalSales, 0, 'COMMA', 0, 'POINT')} + ' đ'">0</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Top Courses + Best Sellers + Topic Distribution -->
+        <div class="row g-4 mb-4">
+            <!-- Top Courses (Most Enrolled) -->
+            <div class="col-lg-4">
+                <div class="chart-card h-100">
+                    <h5 class="section-title mb-3"><i class="fas fa-trophy text-warning"></i> Top khóa học đăng ký nhiều</h5>
+                    <div class="table-responsive">
+                        <table class="table admin-table table-sm">
+                            <thead><tr><th>#</th><th>Khóa học</th><th>Đăng ký</th></tr></thead>
+                            <tbody>
+                                <tr th:each="c, iter : ${stats?.topCourses}">
+                                    <td>
+                                        <span class="best-seller-rank"
+                                              th:classappend="${iter.index == 0} ? 'rank-1' : (${iter.index == 1} ? 'rank-2' : (${iter.index == 2} ? 'rank-3' : 'rank-other'))"
+                                              th:text="${iter.index + 1}">1</span>
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 200px;" th:text="${c.title}" th:title="${c.title}">Course</td>
+                                    <td><span class="badge-admin badge-admin-success" th:text="${c.enrollments}">0</span></td>
+                                </tr>
+                                <tr th:if="${stats == null or stats.topCourses == null or stats.topCourses.empty}">
+                                    <td colspan="3" class="text-center text-muted">Chưa có dữ liệu</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Best Selling Courses (by Revenue) -->
+            <div class="col-lg-4">
+                <div class="chart-card h-100">
+                    <h5 class="section-title mb-3"><i class="fas fa-fire-alt text-danger"></i> Bán chạy nhất (Doanh thu)</h5>
+                    <div th:if="${stats?.bestSellingCourses != null and !stats.bestSellingCourses.empty}">
+                        <div th:each="course, iter : ${stats.bestSellingCourses}" th:if="${iter.index < 5}" class="d-flex align-items-center mb-3">
+                            <span class="best-seller-rank me-2"
+                                  th:classappend="${iter.index == 0} ? 'rank-1' : (${iter.index == 1} ? 'rank-2' : (${iter.index == 2} ? 'rank-3' : 'rank-other'))"
+                                  th:text="${iter.index + 1}">1</span>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="text-truncate fw-semibold small" th:text="${course.title}" th:title="${course.title}">Course</div>
+                                <div class="d-flex gap-3">
+                                    <small class="text-muted"><i class="fas fa-shopping-bag me-1"></i><span th:text="${course.soldCount}">0</span> đã bán</small>
+                                    <small class="text-success fw-bold"><span th:text="${#numbers.formatDecimal(course.totalSales, 0, 'COMMA', 0, 'POINT')}">0</span> đ</small>
+                                </div>
+                                <small class="text-muted" th:text="'GV: ' + ${course.creatorName}">GV</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${stats == null or stats.bestSellingCourses == null or stats.bestSellingCourses.empty}" class="text-center text-muted py-3">
+                        <i class="fas fa-box-open fa-2x mb-2 opacity-50"></i>
+                        <p class="mb-0 small">Chưa có dữ liệu bán hàng</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topic Distribution -->
+            <div class="col-lg-4">
+                <div class="chart-card h-100">
+                    <h5 class="section-title mb-3"><i class="fas fa-tags text-info"></i> Phân bố theo chủ đề</h5>
+                    <div th:if="${stats?.topicDistributions != null and !stats.topicDistributions.empty}">
+                        <div class="chart-wrapper chart-wrapper-topic mb-3">
+                            <canvas id="topicPieChart"></canvas>
+                        </div>
+                        <div th:each="td : ${stats.topicDistributions}" class="mb-2">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span th:text="${td.topicName}">Topic</span>
+                                <span class="text-muted" th:text="${td.courseCount} + ' khóa học · ' + ${td.enrollmentCount} + ' đăng ký'">0</span>
+                            </div>
+                            <div class="topic-progress">
+                                <div class="topic-progress-bar"
+                                     th:style="'width: ' + ${td.courseCount * 100 / (stats.totalCourses > 0 ? stats.totalCourses : 1)} + '%'"
+                                     style="background: linear-gradient(90deg, #6366f1, #818cf8);">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${stats == null or stats.topicDistributions == null or stats.topicDistributions.empty}" class="text-center text-muted py-3">
+                        <i class="fas fa-tags fa-2x mb-2 opacity-50"></i>
+                        <p class="mb-0 small">Chưa có chủ đề nào</p>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Recent Users Table -->
-        <div class="admin-card">
+        <div class="chart-card">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="fw-bold mb-0"><i class="fas fa-user-clock me-2"></i>Người dùng mới</h5>
+                <h5 class="section-title mb-0"><i class="fas fa-user-clock"></i> Người dùng mới</h5>
                 <a th:href="@{/admin/users}" class="btn btn-admin btn-admin-outline btn-sm">
                     Xem tất cả <i class="fas fa-arrow-right ms-1"></i>
                 </a>
@@ -309,11 +633,6 @@
                                        class="btn btn-sm btn-admin btn-admin-outline" title="Sửa">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-admin btn-admin-outline text-danger"
-                                            data-bs-toggle="modal" th:data-bs-target="'#deleteUserModal' + ${user.id}"
-                                            title="Xóa">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -324,52 +643,145 @@
                 </table>
             </div>
         </div>
+    </div>
 
-        <!-- Delete User Modals -->
-        <div th:each="user : ${recentUsers}">
-            <div class="modal fade modal-admin" th:id="'deleteUserModal' + ${user.id}" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">
-                                <i class="fas fa-exclamation-triangle text-danger me-2"></i>Xác nhận xóa
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>Bạn có chắc chắn muốn xóa người dùng:</p>
-                            <p class="fw-bold" th:text="${user.fullName}">User Name</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-admin btn-admin-outline" data-bs-dismiss="modal">Hủy</button>
-                            <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post" style="display: inline;">
-                                <button type="submit" class="btn btn-danger">
-                                    <i class="fas fa-trash me-1"></i>Xóa
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+    <!-- ===== Top Rated Courses Card ===== -->
+    <div class="glass-stat-card mb-4 slide-in" id="topRatedSection">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="mb-0"><i class="fas fa-heart" style="color:#f472b6;"></i> Khóa học yêu thích nhất</h5>
+            <span class="badge" style="background:rgba(244,114,182,0.15);color:#f472b6;">Theo đánh giá</span>
+        </div>
+        <div id="topRatedList">
+            <div class="text-center py-3 text-muted small">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div> Đang tải...
             </div>
         </div>
     </div>
 
+    <style>
+        .top-rated-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+        .top-rated-item:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(244,114,182,0.2);
+        }
+        .top-rated-item.rank-1 {
+            border-color: rgba(245,158,11,0.3);
+            background: rgba(245,158,11,0.05);
+        }
+        .top-rated-rank {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.82rem;
+            flex-shrink: 0;
+        }
+        .top-rated-rank.r1 { background: linear-gradient(135deg,#f59e0b,#d97706); color:#fff; box-shadow: 0 2px 8px rgba(245,158,11,0.3); }
+        .top-rated-rank.r2 { background: linear-gradient(135deg,#94a3b8,#64748b); color:#fff; }
+        .top-rated-rank.r3 { background: linear-gradient(135deg,#cd7f32,#a0522d); color:#fff; }
+        .top-rated-rank.rn { background: #334155; color: #94a3b8; }
+        .top-rated-stars { color: #f59e0b; font-size: 0.75rem; }
+        .top-rated-title { color: #e2e8f0; font-weight: 600; font-size: 0.88rem; }
+        .top-rated-meta { color: #64748b; font-size: 0.75rem; }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/reviews/top-rated', { credentials: 'same-origin' })
+                .then(r => r.json())
+                .then(data => {
+                    const container = document.getElementById('topRatedList');
+                    if (!data || data.length === 0) {
+                        container.innerHTML = '<div class="text-center py-3 text-muted small"><i class="fas fa-star-half-alt opacity-25 fa-2x d-block mb-2"></i>Chưa có đánh giá nào</div>';
+                        return;
+                    }
+                    container.innerHTML = data.slice(0, 5).map((c, i) => {
+                        const rankClass = i === 0 ? 'r1' : (i === 1 ? 'r2' : (i === 2 ? 'r3' : 'rn'));
+                        const itemClass = i === 0 ? 'rank-1' : '';
+                        let starsHtml = '';
+                        for (let s = 1; s <= 5; s++) {
+                            if (s <= Math.floor(c.avgRating)) starsHtml += '<i class="fas fa-star"></i>';
+                            else if (s - 0.5 <= c.avgRating) starsHtml += '<i class="fas fa-star-half-alt"></i>';
+                            else starsHtml += '<i class="far fa-star"></i>';
+                        }
+                        return `<div class="top-rated-item ${itemClass}">
+                            <div class="top-rated-rank ${rankClass}">${i + 1}</div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="top-rated-title text-truncate" title="${c.title}">${c.title}</div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="top-rated-stars">${starsHtml}</span>
+                                    <span class="top-rated-meta"><strong>${c.avgRating}</strong>/5 (${c.reviewCount} đánh giá)</span>
+                                </div>
+                            </div>
+                            ${i === 0 ? '<i class="fas fa-crown" style="color:#f59e0b;font-size:1.1rem;"></i>' : ''}
+                        </div>`;
+                    }).join('');
+                })
+                .catch(err => {
+                    document.getElementById('topRatedList').innerHTML = '<div class="text-center py-3 text-muted small">Không thể tải dữ liệu</div>';
+                });
+        });
+    </script>
+
+    <!-- ===== AI Analysis Mini Card ===== -->
+    <div class="glass-stat-card mb-4 slide-in" style="border: 1px solid rgba(129,140,248,0.15); position: relative; overflow: hidden;" id="dashAiSection">
+        <div style="position: absolute; top:0; left:0; right:0; height: 3px; background: linear-gradient(90deg, #6366f1, #a78bfa, #ec4899, #f59e0b, #34d399); background-size: 300% 100%; animation: dashAiGrad 4s ease infinite;"></div>
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <div style="width:44px; height:44px; border-radius:14px; background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(167,139,250,0.2)); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <h6 class="mb-0 fw-bold" style="color:#e2e8f0;">🧠 AI Phân tích nhanh</h6>
+                    <small style="color:#64748b;">Nhận xét thông minh từ Gemini AI</small>
+                </div>
+            </div>
+            <button class="btn btn-sm" id="dashBtnAi" onclick="loadDashAiAnalysis()" style="background: linear-gradient(135deg, #6366f1, #a78bfa); border:none; color:#fff; padding:8px 20px; border-radius:10px; font-weight:600; font-size:0.82rem; transition: all 0.3s;">
+                <i class="fas fa-magic"></i> Phân tích
+            </button>
+        </div>
+        <div id="dashAiSkeleton" style="display:none;">
+            <div style="height:12px; border-radius:6px; background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; animation: dashAiShimmer 1.5s ease infinite; margin-bottom:10px; width:90%;"></div>
+            <div style="height:12px; border-radius:6px; background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; animation: dashAiShimmer 1.5s ease infinite; margin-bottom:10px; width:75%;"></div>
+            <div style="height:12px; border-radius:6px; background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; animation: dashAiShimmer 1.5s ease infinite; margin-bottom:10px; width:82%;"></div>
+            <div style="height:12px; border-radius:6px; background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%); background-size:200% 100%; animation: dashAiShimmer 1.5s ease infinite; width:60%;"></div>
+        </div>
+        <div id="dashAiResult" style="color:#cbd5e1; font-size:0.88rem; line-height:1.65;">
+            <div style="text-align:center; padding:1rem 0; color:#64748b;">
+                <i class="fas fa-brain fa-2x mb-2" style="opacity:0.12;"></i>
+                <p class="mb-0 small">Nhấn <strong>"Phân tích"</strong> để nhận nhận xét AI</p>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes dashAiGrad { 0%,100%{background-position:0% 50%;} 50%{background-position:100% 50%;} }
+        @keyframes dashAiShimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+        #dashAiResult strong { color: #e2e8f0; }
+        #dashAiResult .ai-insight-item { padding:0.5rem 0.8rem; margin-bottom:0.5rem; border-radius:10px; background:rgba(255,255,255,0.03); border-left:3px solid rgba(99,102,241,0.4); display:flex; gap:8px; align-items:flex-start; }
+        #dashAiResult .ai-emoji { font-size:1.1rem; flex-shrink:0; }
+    </style>
+
     <div layout:fragment="scripts">
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-            // Toggle custom date inputs based on selected period
             function toggleCustomDateInputs() {
                 const periodSelect = document.getElementById('periodSelect');
                 const customDateInputs = document.getElementById('customDateInputs');
                 const startDate = document.getElementById('startDate');
                 const endDate = document.getElementById('endDate');
-                
                 if (periodSelect.value === 'custom') {
                     customDateInputs.style.display = 'flex';
                     startDate.required = true;
                     endDate.required = true;
-                    
-                    // Set default values if empty
                     if (!startDate.value) {
                         const today = new Date();
                         const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
@@ -382,208 +794,451 @@
                     endDate.required = false;
                 }
             }
-            
-            // Initialize on page load
-            document.addEventListener('DOMContentLoaded', function() {
-                toggleCustomDateInputs();
-            });
+            document.addEventListener('DOMContentLoaded', function() { toggleCustomDateInputs(); });
         </script>
         <script th:inline="javascript">
-            // Wait for Chart.js to load
             document.addEventListener('DOMContentLoaded', function() {
                 const labels = /*[[${stats?.labels}]]*/ [];
                 const revenueData = /*[[${stats?.revenueSeries}]]*/ [];
                 const ordersData = /*[[${stats?.paidOrdersSeries}]]*/ [];
+                const enrollmentData = /*[[${stats?.enrollmentSeries}]]*/ [];
 
-                if (document.getElementById('revenueChart') && labels && labels.length > 0) {
-                    const ctx = document.getElementById('revenueChart');
-                    new Chart(ctx, {
+                // ============ Shared Chart Defaults ============
+                Chart.defaults.font.family = "'Segoe UI', 'Inter', sans-serif";
+                Chart.defaults.color = '#94a3b8';
+
+                // ============ Revenue + Orders Chart ============
+                const revenueCanvas = document.getElementById('revenueChart');
+                if (revenueCanvas && labels && labels.length > 0) {
+                    const ctx = revenueCanvas.getContext('2d');
+
+                    // Rich gradient for revenue area
+                    const revenueGradient = ctx.createLinearGradient(0, 0, 0, 340);
+                    revenueGradient.addColorStop(0, 'rgba(99, 102, 241, 0.35)');
+                    revenueGradient.addColorStop(0.4, 'rgba(129, 140, 248, 0.15)');
+                    revenueGradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+
+                    // Green gradient for orders area
+                    const ordersGradient = ctx.createLinearGradient(0, 0, 0, 340);
+                    ordersGradient.addColorStop(0, 'rgba(52, 211, 153, 0.25)');
+                    ordersGradient.addColorStop(0.5, 'rgba(52, 211, 153, 0.08)');
+                    ordersGradient.addColorStop(1, 'rgba(52, 211, 153, 0)');
+
+                    new Chart(revenueCanvas, {
                         type: 'line',
                         data: {
                             labels: labels,
                             datasets: [
                                 {
-                                    label: 'Doanh thu',
+                                    label: 'Doanh thu (đ)',
                                     data: revenueData,
-                                    borderColor: 'rgba(108, 92, 231, 1)',
-                                    backgroundColor: 'rgba(108, 92, 231, 0.1)',
+                                    borderColor: '#818cf8',
+                                    backgroundColor: revenueGradient,
                                     tension: 0.4,
                                     fill: true,
+                                    borderWidth: 2.5,
+                                    pointRadius: 3,
+                                    pointBackgroundColor: '#818cf8',
+                                    pointBorderColor: 'transparent',
+                                    pointHoverRadius: 7,
+                                    pointHoverBackgroundColor: '#818cf8',
+                                    pointHoverBorderColor: '#fff',
+                                    pointHoverBorderWidth: 3,
                                     yAxisID: 'y'
-                            },
-                            {
-                                label: 'Đơn đã thanh toán',
-                                data: ordersData,
-                                borderColor: 'rgba(16, 185, 129, 1)',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                tension: 0.4,
-                                fill: false,
-                                yAxisID: 'y1'
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: {
-                                labels: { color: '#a0a0a0' }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                ticks: { color: '#a0a0a0' },
-                                grid: { color: 'rgba(255,255,255,0.05)' }
-                            },
-                            y: {
-                                type: 'linear',
-                                display: true,
-                                position: 'left',
-                                ticks: { color: '#a0a0a0' },
-                                grid: { color: 'rgba(255,255,255,0.05)' }
-                            },
-                            y1: {
-                                type: 'linear',
-                                display: true,
-                                position: 'right',
-                                grid: { drawOnChartArea: false },
-                                ticks: { color: '#a0a0a0' }
-                            }
-                        }
-                    }
-                });
-                }
-                
-                // Quarterly Comparison Bar Charts
-                const quarterlyData = /*[[${stats?.quarterlyComparisons}]]*/ [];
-                
-                if (quarterlyData && quarterlyData.length > 0) {
-                    // Extract data for charts
-                    const quarterLabels = quarterlyData.map(q => q.quarter);
-                    const quarterRevenues = quarterlyData.map(q => q.revenue);
-                    const quarterOrders = quarterlyData.map(q => q.orders);
-                    
-                    // Revenue Bar Chart
-                    if (document.getElementById('quarterlyRevenueChart')) {
-                        const revenueCtx = document.getElementById('quarterlyRevenueChart');
-                        new Chart(revenueCtx, {
-                            type: 'bar',
-                        data: {
-                            labels: quarterLabels,
-                            datasets: [{
-                                label: 'Doanh thu (đ)',
-                                data: quarterRevenues,
-                                backgroundColor: [
-                                    'rgba(108, 92, 231, 0.8)',
-                                    'rgba(16, 185, 129, 0.8)',
-                                    'rgba(245, 158, 11, 0.8)',
-                                    'rgba(239, 68, 68, 0.8)'
-                                ],
-                                borderColor: [
-                                    'rgba(108, 92, 231, 1)',
-                                    'rgba(16, 185, 129, 1)',
-                                    'rgba(245, 158, 11, 1)',
-                                    'rgba(239, 68, 68, 1)'
-                                ],
-                                borderWidth: 2,
-                                borderRadius: 5
-                            }]
+                                },
+                                {
+                                    label: 'Đơn thanh toán',
+                                    data: ordersData,
+                                    borderColor: '#34d399',
+                                    backgroundColor: ordersGradient,
+                                    tension: 0.4,
+                                    fill: true,
+                                    borderWidth: 2,
+                                    pointRadius: 3,
+                                    pointBackgroundColor: '#34d399',
+                                    pointBorderColor: 'transparent',
+                                    pointHoverRadius: 6,
+                                    pointHoverBackgroundColor: '#34d399',
+                                    pointHoverBorderColor: '#fff',
+                                    pointHoverBorderWidth: 2,
+                                    yAxisID: 'y1'
+                                }
+                            ]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
                             plugins: {
                                 legend: {
-                                    display: true,
-                                    labels: { color: '#a0a0a0' }
+                                    labels: {
+                                        color: '#94a3b8',
+                                        usePointStyle: true,
+                                        pointStyle: 'circle',
+                                        padding: 20,
+                                        font: { size: 12 }
+                                    }
                                 },
-                                title: {
-                                    display: true,
-                                    text: 'So sánh doanh thu theo quý',
-                                    color: '#ffffff',
-                                    font: { size: 14, weight: 'bold' }
-                                }
-                            },
-                            scales: {
-                                x: {
-                                    ticks: { color: '#a0a0a0' },
-                                    grid: { color: 'rgba(255,255,255,0.05)' }
-                                },
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: { 
-                                        color: '#a0a0a0',
-                                        callback: function(value) {
-                                            return value.toLocaleString('vi-VN') + ' đ';
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                    titleColor: '#e2e8f0',
+                                    bodyColor: '#cbd5e1',
+                                    borderColor: 'rgba(255,255,255,0.1)',
+                                    borderWidth: 1,
+                                    cornerRadius: 10,
+                                    padding: 14,
+                                    displayColors: true,
+                                    boxPadding: 6,
+                                    callbacks: {
+                                        label: function(ctx) {
+                                            if (ctx.datasetIndex === 0) return '  Doanh thu: ' + Number(ctx.raw).toLocaleString('vi-VN') + ' đ';
+                                            return '  Đơn hàng: ' + ctx.raw;
                                         }
-                                    },
-                                    grid: { color: 'rgba(255,255,255,0.05)' }
+                                    }
                                 }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: { color: '#64748b', maxRotation: 45, font: { size: 11 } },
+                                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false }
+                                },
+                                y: {
+                                    type: 'linear',
+                                    position: 'left',
+                                    ticks: { color: '#64748b', callback: v => v.toLocaleString('vi-VN') + ' đ', font: { size: 11 } },
+                                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    position: 'right',
+                                    grid: { drawOnChartArea: false, drawBorder: false },
+                                    ticks: { color: '#64748b', stepSize: 1, font: { size: 11 } }
+                                }
+                            },
+                            animation: {
+                                duration: 1500,
+                                easing: 'easeOutQuart'
                             }
                         }
                     });
                 }
-                
-                // Orders Bar Chart
-                if (document.getElementById('quarterlyOrdersChart')) {
-                    const ordersCtx = document.getElementById('quarterlyOrdersChart');
-                    new Chart(ordersCtx, {
-                        type: 'bar',
+
+                // ============ Enrollment Trend Chart (Mixed Bar + Line) ============
+                const enrollCanvas = document.getElementById('enrollmentChart');
+                if (enrollCanvas && enrollmentData && enrollmentData.length > 0) {
+                    const ectx = enrollCanvas.getContext('2d');
+
+                    // Each bar gets a unique gradient based on value
+                    const maxEnroll = Math.max(...enrollmentData, 1);
+                    const barColors = enrollmentData.map((val, i) => {
+                        const g = ectx.createLinearGradient(0, 260, 0, 0);
+                        const intensity = (val / maxEnroll) * 0.7 + 0.2;
+                        g.addColorStop(0, 'rgba(59, 130, 246, 0.05)');
+                        g.addColorStop(1, 'rgba(59, 130, 246, ' + intensity + ')');
+                        return g;
+                    });
+
+                    // Calculate a 3-point moving average for the trend line
+                    const trendData = enrollmentData.map((val, i, arr) => {
+                        if (i === 0) return arr[0];
+                        if (i === arr.length - 1) return arr[arr.length - 1];
+                        return Math.round((arr[i-1] + arr[i] + arr[i+1]) / 3 * 10) / 10;
+                    });
+
+                    new Chart(enrollCanvas, {
                         data: {
-                            labels: quarterLabels,
-                            datasets: [{
-                                label: 'Số đơn hàng',
-                                data: quarterOrders,
-                                backgroundColor: [
-                                    'rgba(16, 185, 129, 0.8)',
-                                    'rgba(108, 92, 231, 0.8)',
-                                    'rgba(245, 158, 11, 0.8)',
-                                    'rgba(239, 68, 68, 0.8)'
-                                ],
-                                borderColor: [
-                                    'rgba(16, 185, 129, 1)',
-                                    'rgba(108, 92, 231, 1)',
-                                    'rgba(245, 158, 11, 1)',
-                                    'rgba(239, 68, 68, 1)'
-                                ],
-                                borderWidth: 2,
-                                borderRadius: 5
-                            }]
+                            labels: labels,
+                            datasets: [
+                                {
+                                    type: 'bar',
+                                    label: 'Đăng ký mới',
+                                    data: enrollmentData,
+                                    backgroundColor: barColors,
+                                    borderColor: 'rgba(59, 130, 246, 0.6)',
+                                    borderWidth: 1,
+                                    borderRadius: 6,
+                                    borderSkipped: false,
+                                    order: 2
+                                },
+                                {
+                                    type: 'line',
+                                    label: 'Xu hướng',
+                                    data: trendData,
+                                    borderColor: '#f59e0b',
+                                    backgroundColor: 'transparent',
+                                    tension: 0.5,
+                                    borderWidth: 2,
+                                    borderDash: [4, 4],
+                                    pointRadius: 0,
+                                    pointHoverRadius: 4,
+                                    pointHoverBackgroundColor: '#f59e0b',
+                                    order: 1
+                                }
+                            ]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
                                 legend: {
-                                    display: true,
-                                    labels: { color: '#a0a0a0' }
+                                    labels: {
+                                        color: '#94a3b8',
+                                        usePointStyle: true,
+                                        pointStyle: 'circle',
+                                        padding: 12,
+                                        font: { size: 11 }
+                                    }
                                 },
-                                title: {
-                                    display: true,
-                                    text: 'So sánh số đơn hàng theo quý',
-                                    color: '#ffffff',
-                                    font: { size: 14, weight: 'bold' }
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                    titleColor: '#e2e8f0',
+                                    bodyColor: '#cbd5e1',
+                                    borderColor: 'rgba(255,255,255,0.1)',
+                                    borderWidth: 1,
+                                    cornerRadius: 10,
+                                    padding: 12,
+                                    callbacks: {
+                                        label: function(ctx) {
+                                            if (ctx.datasetIndex === 0) return '  Đăng ký: ' + ctx.raw;
+                                            return '  Trung bình: ' + ctx.raw;
+                                        }
+                                    }
                                 }
                             },
                             scales: {
                                 x: {
-                                    ticks: { color: '#a0a0a0' },
-                                    grid: { color: 'rgba(255,255,255,0.05)' }
+                                    display: false
                                 },
                                 y: {
                                     beginAtZero: true,
-                                    ticks: { 
-                                        color: '#a0a0a0',
-                                        stepSize: 1
-                                    },
-                                    grid: { color: 'rgba(255,255,255,0.05)' }
+                                    ticks: { color: '#64748b', stepSize: 1, font: { size: 11 } },
+                                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false }
+                                }
+                            },
+                            animation: {
+                                duration: 1200,
+                                easing: 'easeOutQuart',
+                                delay: function(context) {
+                                    return context.dataIndex * 30;
                                 }
                             }
                         }
                     });
+                }
+
+                // ============ Topic Pie/Doughnut Chart ============
+                const topicData = /*[[${stats?.topicDistributions}]]*/ [];
+                const topicCanvas = document.getElementById('topicPieChart');
+                if (topicCanvas && topicData && topicData.length > 0) {
+                    const topicColors = [
+                        '#818cf8', '#34d399', '#fbbf24', '#fb7185', '#60a5fa',
+                        '#a78bfa', '#f472b6', '#2dd4bf', '#f97316', '#22d3ee'
+                    ];
+                    new Chart(topicCanvas, {
+                        type: 'doughnut',
+                        data: {
+                            labels: topicData.map(t => t.topicName),
+                            datasets: [{
+                                data: topicData.map(t => t.courseCount),
+                                backgroundColor: topicColors.slice(0, topicData.length),
+                                borderWidth: 0,
+                                hoverOffset: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '65%',
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        color: '#94a3b8',
+                                        padding: 10,
+                                        font: { size: 11 },
+                                        usePointStyle: true,
+                                        pointStyle: 'circle'
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                    titleColor: '#e2e8f0',
+                                    bodyColor: '#cbd5e1',
+                                    borderColor: 'rgba(255,255,255,0.1)',
+                                    borderWidth: 1,
+                                    cornerRadius: 10,
+                                    padding: 12
+                                }
+                            },
+                            animation: {
+                                animateRotate: true,
+                                duration: 1200,
+                                easing: 'easeOutQuart'
+                            }
+                        }
+                    });
+                }
+
+                // ============ Quarterly Charts ============
+                const quarterlyData = /*[[${stats?.quarterlyComparisons}]]*/ [];
+                if (quarterlyData && quarterlyData.length > 0) {
+                    const qLabels = quarterlyData.map(q => q.quarter);
+                    const qRevenues = quarterlyData.map(q => q.revenue);
+                    const qOrders = quarterlyData.map(q => q.orders);
+                    const qColors = [
+                        'rgba(129,140,248,0.75)',
+                        'rgba(52,211,153,0.75)',
+                        'rgba(251,191,36,0.75)',
+                        'rgba(251,113,133,0.75)'
+                    ];
+                    const qBorderColors = ['#818cf8', '#34d399', '#fbbf24', '#fb7185'];
+
+                    const qRevenueCanvas = document.getElementById('quarterlyRevenueChart');
+                    if (qRevenueCanvas) {
+                        new Chart(qRevenueCanvas, {
+                            type: 'bar',
+                            data: {
+                                labels: qLabels,
+                                datasets: [{
+                                    label: 'Doanh thu',
+                                    data: qRevenues,
+                                    backgroundColor: qColors,
+                                    borderColor: qBorderColors,
+                                    borderWidth: 2,
+                                    borderRadius: 8,
+                                    borderSkipped: false
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: 'Doanh thu theo quý',
+                                        color: '#e2e8f0',
+                                        font: { size: 14, weight: 'bold' },
+                                        padding: { bottom: 16 }
+                                    },
+                                    legend: { display: false },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                        titleColor: '#e2e8f0',
+                                        bodyColor: '#cbd5e1',
+                                        cornerRadius: 10,
+                                        padding: 12,
+                                        callbacks: {
+                                            label: function(ctx) { return '  Doanh thu: ' + Number(ctx.raw).toLocaleString('vi-VN') + ' đ'; }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: { ticks: { color: '#64748b', font: { size: 12 } }, grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false } },
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: { color: '#64748b', callback: v => v.toLocaleString('vi-VN') + ' đ', font: { size: 11 } },
+                                        grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false }
+                                    }
+                                },
+                                animation: { duration: 1000, easing: 'easeOutQuart' }
+                            }
+                        });
+                    }
+
+                    const qOrdersCanvas = document.getElementById('quarterlyOrdersChart');
+                    if (qOrdersCanvas) {
+                        new Chart(qOrdersCanvas, {
+                            type: 'bar',
+                            data: {
+                                labels: qLabels,
+                                datasets: [{
+                                    label: 'Đơn hàng',
+                                    data: qOrders,
+                                    backgroundColor: qColors.slice().reverse(),
+                                    borderColor: qBorderColors.slice().reverse(),
+                                    borderWidth: 2,
+                                    borderRadius: 8,
+                                    borderSkipped: false
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    title: {
+                                        display: true,
+                                        text: 'Số đơn hàng theo quý',
+                                        color: '#e2e8f0',
+                                        font: { size: 14, weight: 'bold' },
+                                        padding: { bottom: 16 }
+                                    },
+                                    legend: { display: false },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                        titleColor: '#e2e8f0',
+                                        bodyColor: '#cbd5e1',
+                                        cornerRadius: 10,
+                                        padding: 12
+                                    }
+                                },
+                                scales: {
+                                    x: { ticks: { color: '#64748b', font: { size: 12 } }, grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false } },
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: { color: '#64748b', stepSize: 1, font: { size: 11 } },
+                                        grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false }
+                                    }
+                                },
+                                animation: { duration: 1000, easing: 'easeOutQuart' }
+                            }
+                        });
                     }
                 }
             });
         </script>
+        <script th:inline="javascript">
+            function loadDashAiAnalysis() {
+                const btn = document.getElementById('dashBtnAi');
+                const skeleton = document.getElementById('dashAiSkeleton');
+                const result = document.getElementById('dashAiResult');
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang phân tích...';
+                skeleton.style.display = 'block';
+                result.style.display = 'none';
+
+                const period = /*[[${period}]]*/ 'month';
+                const startDate = /*[[${startDate}]]*/ '';
+                const endDate = /*[[${endDate}]]*/ '';
+
+                let url = '/admin/api/ai-analysis?period=' + encodeURIComponent(period);
+                if (startDate) url += '&startDate=' + encodeURIComponent(startDate);
+                if (endDate) url += '&endDate=' + encodeURIComponent(endDate);
+
+                fetch(url, { credentials: 'same-origin' })
+                    .then(r => { if(!r.ok) throw new Error('Network error'); return r.text(); })
+                    .then(html => {
+                        skeleton.style.display = 'none';
+                        result.innerHTML = html;
+                        result.style.display = 'block';
+                        result.style.opacity = '0';
+                        requestAnimationFrame(() => {
+                            result.style.transition = 'opacity 0.5s ease';
+                            result.style.opacity = '1';
+                        });
+                        btn.innerHTML = '<i class="fas fa-sync-alt"></i> Phân tích lại';
+                        btn.disabled = false;
+                    })
+                    .catch(err => {
+                        skeleton.style.display = 'none';
+                        result.innerHTML = '<div class="ai-insight-item"><span class="ai-emoji">⚠️</span><span><strong>Lỗi:</strong> ' + err.message + '</span></div>';
+                        result.style.display = 'block';
+                        btn.innerHTML = '<i class="fas fa-redo"></i> Thử lại';
+                        btn.disabled = false;
+                    });
+            }
+        </script>
     </div>
+
 </body>
+</html>

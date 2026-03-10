@@ -2,14 +2,15 @@ package com.jungle.courseshop.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jungle.courseshop.dto.request.*;
+import com.jungle.courseshop.dto.request.CourseCreateRequest;
+import com.jungle.courseshop.dto.request.CourseModuleRequest;
+import com.jungle.courseshop.dto.request.CourseUpdateRequest;
 import com.jungle.courseshop.dto.response.*;
 import com.jungle.courseshop.entity.*;
 import com.jungle.courseshop.exception.ResourceNotFoundException;
 import com.jungle.courseshop.repository.*;
 import com.jungle.courseshop.service.CloudinaryService;
 import com.jungle.courseshop.service.CourseService;
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,8 +44,7 @@ public class CourseServiceImpl implements CourseService {
     private final TopicRepo topicRepo;
     private final QuizRepo quizRepo;
     private final QuizAttemptRepo quizAttemptRepo;
-    private final FeedbackRepo feedbackRepo;
-    private final EntityManager entityManager;
+    private final QuizQuestionRepo quizQuestionRepo;
 
 
     @Transactional
@@ -111,15 +111,6 @@ public class CourseServiceImpl implements CourseService {
                 modules.add(module);
             }
             moduleRepository.saveAll(modules);
-
-            // Tạo quiz cho từng module nếu có
-            for (int i = 0; i < moduleRequests.size(); i++) {
-                CourseModuleRequest moduleRequest = moduleRequests.get(i);
-                if (moduleRequest.getQuiz() != null && moduleRequest.getQuiz().getQuestions() != null
-                        && !moduleRequest.getQuiz().getQuestions().isEmpty()) {
-                    createQuizForModule(modules.get(i), moduleRequest.getQuiz());
-                }
-            }
         }
 
         return mapToCourseResponse(savedCourse, modules, currentUser);
@@ -159,43 +150,10 @@ public class CourseServiceImpl implements CourseService {
 
         // Xử lý cập nhật modules và videos nếu có
         if (request.getModules() != null) {
-            List<CourseModule> oldModules = moduleRepository.findByCourseOrderByOrderIndexAsc(course);
-
-            List<CourseVideo> allOldVideos = oldModules.stream()
-                    .flatMap(m -> m.getVideos().stream())
-                    .collect(Collectors.toList());
-
-            if (!allOldVideos.isEmpty()) {
-                // Xóa replies trước (FK: feedback.parent_id -> feedback.id)
-                feedbackRepo.deleteRepliesByVideoIn(allOldVideos);
-                // Xóa feedback gốc
-                feedbackRepo.deleteByVideoIn(allOldVideos);
-                // Xóa watched_video (FK: watched_video.video_id -> course_video.id)
-                watchedVideoRepository.deleteByVideoIn(allOldVideos);
-            }
-
-            // Xóa quiz_attempt trước khi xóa quiz
-            List<Quiz> allOldQuizzes = oldModules.stream()
-                    .filter(m -> m.getQuiz() != null)
-                    .map(CourseModule::getQuiz)
-                    .collect(Collectors.toList());
-            if (!allOldQuizzes.isEmpty()) {
-                quizAttemptRepo.deleteByQuizIn(allOldQuizzes);
-            }
-
-            // Flush + clear persistence context để đảm bảo các lệnh DELETE trên đã commit
-            // trước khi cascade delete xóa course_video
-            entityManager.flush();
-            entityManager.clear();
-
-            // Reload course sau khi clear context
-            course = courseRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
-
-            // Xóa toàn bộ module cũ (cascade xóa videos, quiz, questions, options)
-            List<CourseModule> reloadedModules = moduleRepository.findByCourseOrderByOrderIndexAsc(course);
-            moduleRepository.deleteAll(reloadedModules);
-            moduleRepository.flush();
+            // Xóa toàn bộ module và video cũ
+            List<CourseModule> oldModules = moduleRepository.findByCourse_ActiveTrueOrderByOrderIndexAsc()
+                .stream().filter(m -> m.getCourse().getId().equals(course.getId())).toList();
+            moduleRepository.deleteAll(oldModules);
 
             // Tạo lại module và video mới
             List<CourseModuleRequest> moduleRequests = objectMapper.readValue(
@@ -220,19 +178,11 @@ public class CourseServiceImpl implements CourseService {
                 newModules.add(module);
             }
             moduleRepository.saveAll(newModules);
-
-            // Tạo quiz cho từng module mới nếu có
-            for (int i = 0; i < moduleRequests.size(); i++) {
-                CourseModuleRequest moduleRequest = moduleRequests.get(i);
-                if (moduleRequest.getQuiz() != null && moduleRequest.getQuiz().getQuestions() != null
-                        && !moduleRequest.getQuiz().getQuestions().isEmpty()) {
-                    createQuizForModule(newModules.get(i), moduleRequest.getQuiz());
-                }
-            }
         }
 
         Course savedCourse = courseRepository.save(course);
-        List<CourseModule> modules = moduleRepository.findByCourseOrderByOrderIndexAsc(savedCourse);
+        // Lấy lại modules để trả về response
+        List<CourseModule> modules = moduleRepository.findByCourse_ActiveTrueOrderByOrderIndexAsc();
         return mapToCourseResponse(savedCourse, modules, currentUser);
     }
 
@@ -509,13 +459,31 @@ public class CourseServiceImpl implements CourseService {
                             .build();
                 })
                 .collect(Collectors.toList());
-
-        // Map quiz nếu có
+        
+        // Map quiz if exists
         QuizResponse quizResponse = null;
         if (module.getQuiz() != null) {
             Quiz quiz = module.getQuiz();
-            // Kiểm tra user đã pass quiz này chưa
-            boolean passed = currentUser != null && quizAttemptRepo.existsByUserAndQuizAndPassedTrue(currentUser, quiz);
+            boolean passed = quizAttemptRepo.existsByUserAndQuizAndPassedTrue(currentUser, quiz);
+            
+            List<QuizResponse.QuestionResponse> questionResponses = quizQuestionRepo
+                    .findByQuizIdOrderByOrderIndexAsc(quiz.getId())
+                    .stream()
+                    .map(q -> QuizResponse.QuestionResponse.builder()
+                            .id(q.getId())
+                            .questionText(q.getQuestionText())
+                            .orderIndex(q.getOrderIndex())
+                            .options(q.getOptions().stream()
+                                    .map(opt -> QuizResponse.OptionResponse.builder()
+                                            .id(opt.getId())
+                                            .optionText(opt.getOptionText())
+                                            .isCorrect(null) // Không hiển thị đáp án đúng ở đây
+                                            .explanation(null)
+                                            .build())
+                                    .collect(Collectors.toList()))
+                            .build())
+                    .collect(Collectors.toList());
+            
             quizResponse = QuizResponse.builder()
                     .id(quiz.getId())
                     .title(quiz.getTitle())
@@ -523,75 +491,21 @@ public class CourseServiceImpl implements CourseService {
                     .passScore(quiz.getPassScore())
                     .moduleId(module.getId())
                     .moduleName(module.getTitle())
+                    .questions(questionResponses)
                     .active(quiz.getActive())
                     .passed(passed)
-                    .questions(quiz.getQuestions().stream()
-                            .map(q -> QuizResponse.QuestionResponse.builder()
-                                    .id(q.getId())
-                                    .questionText(q.getQuestionText())
-                                    .orderIndex(q.getOrderIndex())
-                                    .options(q.getOptions().stream()
-                                            .map(opt -> QuizResponse.OptionResponse.builder()
-                                                    .id(opt.getId())
-                                                    .optionText(opt.getOptionText())
-                                                    .isCorrect(opt.getIsCorrect())
-                                                    .explanation(opt.getExplanation())
-                                                    .build())
-                                            .collect(Collectors.toList()))
-                                    .build())
-                            .collect(Collectors.toList()))
                     .build();
         }
-
+        
         return CourseModuleResponse.builder()
                 .id(module.getId())
                 .title(module.getTitle())
                 .videos(videoDTOs)
-                .orderIndex(module.getOrderIndex())
                 .quiz(quizResponse)
+                .orderIndex(module.getOrderIndex())
                 .createdAt(module.getCreatedAt())
                 .updatedAt(module.getUpdatedAt())
                 .build();
-    }
-
-    /**
-     * Tạo quiz cho module từ QuizRequest
-     */
-    private void createQuizForModule(CourseModule module, QuizRequest quizRequest) {
-        Quiz quiz = new Quiz();
-        quiz.setTitle(quizRequest.getTitle() != null ? quizRequest.getTitle() : "Quiz - " + module.getTitle());
-        quiz.setDescription(quizRequest.getDescription());
-        quiz.setPassScore(quizRequest.getPassScore() != null ? quizRequest.getPassScore() : 70);
-        quiz.setCourseModule(module);
-        quiz.setActive(true);
-
-        List<QuizQuestion> questions = new ArrayList<>();
-        if (quizRequest.getQuestions() != null) {
-            for (int i = 0; i < quizRequest.getQuestions().size(); i++) {
-                QuizRequest.QuestionRequest qReq = quizRequest.getQuestions().get(i);
-                QuizQuestion question = new QuizQuestion();
-                question.setQuestionText(qReq.getQuestionText());
-                question.setOrderIndex(qReq.getOrderIndex() != null ? qReq.getOrderIndex() : i);
-                question.setQuiz(quiz);
-
-                List<QuizOption> options = new ArrayList<>();
-                if (qReq.getOptions() != null) {
-                    for (QuizRequest.OptionRequest optReq : qReq.getOptions()) {
-                        QuizOption option = new QuizOption();
-                        option.setOptionText(optReq.getOptionText());
-                        option.setIsCorrect(optReq.getCorrect() != null ? optReq.getCorrect() : false);
-                        option.setExplanation(optReq.getExplanation());
-                        option.setQuestion(question);
-                        options.add(option);
-                    }
-                }
-                question.setOptions(options);
-                questions.add(question);
-            }
-        }
-        quiz.setQuestions(questions);
-        quizRepo.save(quiz);
-        log.info("Quiz created for module: {} with {} questions", module.getTitle(), questions.size());
     }
 
     private CourseHomeResponse mapToCourseHomeResponse(Course course, boolean isEnrolled) {

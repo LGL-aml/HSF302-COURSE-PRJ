@@ -10,6 +10,7 @@ import com.jungle.courseshop.entity .Order;
 import com.jungle.courseshop.entity.Role;
 import com.jungle.courseshop.repository.OrderRepo;
 import com.jungle.courseshop.service.CourseService;
+import com.jungle.courseshop.service.impl.AdminAiAnalysisService;
 import com.jungle.courseshop.service.impl.AdminStatsService;
 import com.jungle.courseshop.service.impl.TopicServiceImpl;
 import com.jungle.courseshop.service.impl.UserServiceImpl;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -34,6 +36,7 @@ public class AdminController {
     private final UserServiceImpl userService;
     private final TopicServiceImpl topicService;
     private final AdminStatsService adminStatsService;
+    private final AdminAiAnalysisService aiAnalysisService;
     private final CourseService courseService;
     private final OrderRepo orderRepo;
 
@@ -71,6 +74,10 @@ public class AdminController {
             model.addAttribute("totalUsers", stats.getTotalUsers());
             model.addAttribute("totalTopics", stats.getTotalTopics());
             model.addAttribute("totalCourses", stats.getTotalCourses());
+            model.addAttribute("totalLecturers", stats.getTotalLecturers());
+            model.addAttribute("totalEnrollments", stats.getTotalEnrollments());
+            model.addAttribute("totalRevenue", stats.getTotalRevenue());
+            model.addAttribute("totalPaidOrders", stats.getTotalPaidOrders());
 
         } catch (Exception e) {
             log.error("Error loading admin dashboard", e);
@@ -362,5 +369,29 @@ public class AdminController {
     @GetMapping("/settings")
     public String settings() {
         return "redirect:/admin/dashboard";
+    }
+
+    // --- AI Analysis API ---
+
+    @GetMapping("/api/ai-analysis")
+    @ResponseBody
+    public ResponseEntity<String> aiAnalysis(
+            @RequestParam(value = "period", required = false, defaultValue = "month") String period,
+            @RequestParam(value = "startDate", required = false) String startDateStr,
+            @RequestParam(value = "endDate", required = false) String endDateStr) {
+        try {
+            LocalDate startDate = null;
+            LocalDate endDate = null;
+            if ("custom".equals(period) && startDateStr != null && endDateStr != null) {
+                startDate = LocalDate.parse(startDateStr);
+                endDate = LocalDate.parse(endDateStr);
+            }
+            var stats = adminStatsService.getDashboardStats(period, startDate, endDate);
+            String analysis = aiAnalysisService.analyzeStats(stats);
+            return ResponseEntity.ok(analysis);
+        } catch (Exception e) {
+            log.error("AI Analysis error", e);
+            return ResponseEntity.ok("<p class='text-warning'><i class='fas fa-exclamation-triangle'></i> Không thể phân tích AI lúc này. Vui lòng thử lại sau.</p>");
+        }
     }
 }
